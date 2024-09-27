@@ -2,6 +2,7 @@ import argparse
 import mendeleev
 import numpy as np
 import re
+import os
 from collections import deque
 from typing import List, Tuple
 from itertools import groupby, compress
@@ -293,8 +294,8 @@ def process_atoms_list(atoms_list: List[Atom]) -> Tuple[List[Atom], List[int]]:
 
         # Update string formats
         column_widths = [a if a > b else b for a, b in
-                       zip(column_widths, [len(col[0]) for col in atom.init_proc_data_var] + [0] * (
-                               len(column_widths) - len(atom.init_proc_data_var)))]
+                         zip(column_widths, [len(col[0]) for col in atom.init_proc_data_var] + [0] * (
+                                 len(column_widths) - len(atom.init_proc_data_var)))]
 
         # Add atom connections to queue
         for i in atom.connections:
@@ -373,7 +374,11 @@ def find_closest_pair_between_subgraphs(atoms_list: List[Atom], subgraphs: List[
                                                key=itemgetter('graph1'))]
 
 
-def main(xyz_file_start, xyz_file_end, zmt_file_start_out, zmt_file_end_out, debug_connections_out, coef):
+def write_file():
+    pass
+
+
+def main(xyz_file_start, xyz_file_end, zmt_folder_out, debug_connections_out, coef):
     # read original xyz files without header
     with open(xyz_file_start, encoding='utf8') as f:
         xyz_start_coord = f.readlines()
@@ -404,14 +409,19 @@ def main(xyz_file_start, xyz_file_end, zmt_file_start_out, zmt_file_end_out, deb
                   f"({list(atoms_list[distance['index2']].init_coord)})")
             atoms_list[distance['index1']].connect(atoms_list[distance['index2']])
 
-    with open(debug_connections_out, 'w', encoding='utf8') as f:
-        f.write('source_index,name,initial_coord,trans_coord,connections\n')
-        f.writelines(
-            f'{atom.init_idx},{atom.name},{atom.init_coord},{atom.trans_coord},{sorted(atom.connections)}\n' for atom in
-            atoms_list)
+    if debug_connections_out:
+        with open(debug_connections_out, 'w', encoding='utf8') as f:
+            f.write('source_index,name,initial_coord,trans_coord,connections\n')
+            f.writelines(
+                f'{atom.init_idx},{atom.name},{atom.init_coord},{atom.trans_coord},{sorted(atom.connections)}\n' for
+                atom in atoms_list)
 
     atoms_list, column_widths = process_atoms_list(atoms_list)
     int_format = len(str(len(atoms_list)))
+
+    zmt_file_start_out = os.path.join(zmt_folder_out, os.path.basename(xyz_file_start) + '.inp')
+    zmt_file_end_out = os.path.join(zmt_folder_out, os.path.basename(xyz_file_end) + '.inp')
+
     with (open(zmt_file_start_out, 'w', encoding='utf8') as f_start,
           open(zmt_file_end_out, 'w', encoding='utf8') as f_end):
         f_start.write(HEAD.format(title=title))
@@ -454,8 +464,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--xyz-file-start')
     parser.add_argument('--xyz-file-end')
-    parser.add_argument('--zmt-file-start-out')
-    parser.add_argument('--zmt-file-end-out')
+    parser.add_argument('--zmt-folder-out')
     parser.add_argument('--debug-connections-out', default=None)
     parser.add_argument('--coef', type=float, default=1)
 
