@@ -4,7 +4,7 @@ import numpy as np
 import re
 import os
 from collections import deque
-from typing import List, Tuple
+from typing import List, Tuple, AnyStr
 from itertools import groupby, compress
 from operator import itemgetter
 
@@ -50,12 +50,16 @@ class Atom:
             set of init_idx of atoms, connected to current atom
         proc_data_idx:
             list of final_idx of atoms, on which distance, angle and dihedral are calculated
-        init_proc_data_var:
-            list of tuples, containing calculated distance (for all atoms, except first), angle (for all atoms, except
-            first two) and dihedral (for all atoms, except first three) for initial atom coordinates
-        trans_proc_data_var:
-            list of tuples, containing calculated distance (for all atoms, except first), angle (for all atoms, except
-            first two) and dihedral (for all atoms, except first three) for transformed atom coordinates
+        proc_data_var:
+            list of variable (distance, angle, dihedral) names in output file
+        init_proc_data_value:
+            list of calculated distances (for all atoms, except first), angles (for all atoms, except first two) and
+            dihedrals (for all atoms, except first three) for initial atom coordinates
+        trans_proc_data_value:
+            list of calculated distances (for all atoms, except first), angles (for all atoms, except first two) and
+            dihedrals (for all atoms, except first three) for transformed atom coordinates
+        interpolation_points:
+            interpolated values of distance, angle and dihedral between initial and transformed file
     methods:
         __init__(self, idx, initial_atom_line, trans_atom_line):
             args:
@@ -71,7 +75,7 @@ class Atom:
                 other (Atom)
         calculate_data:
             Get all possible measurements for Atom, based on queue_atoms (fill self.proc_data_idx,
-            self.init_proc_data_var, self.trans_proc_data_var)
+            self.init_proc_data_value, self.trans_proc_data_value)
             args:
                 queue_atoms:
                     atoms, based on which all connections should be performed
@@ -108,6 +112,10 @@ class Atom:
                     graph:
                 return:
                     list of atoms, connected to chain
+        interpolate(self, n_points):
+            Calculate interpolation points between initial and transformed atom distance, angle and dihedral
+            args:
+                n_points: number of interpolation points
     """
 
     def __init__(self, idx: int, initial_atom_line: str, trans_atom_line: str):
@@ -128,8 +136,10 @@ class Atom:
         self.trans_coord = np.array([float(x) for x in self.trans_coord.split()])
         self.connections = set()
         self.proc_data_idx = []
-        self.init_proc_data_var = []
-        self.trans_proc_data_var = []
+        self.proc_data_var = []
+        self.init_proc_data_value = []
+        self.trans_proc_data_value = []
+        self.interpolation_points = []
 
     def connect(self, other: 'Atom'):
         """
@@ -137,44 +147,39 @@ class Atom:
         :param other:
         """
 
-        if not isinstance(other, Atom):
-            raise TypeError(f'Expected type Atom, got {type(other)}')
+        assert isinstance(other, Atom), f'Expected type Atom, got {type(other)}'
         self.connections.add(other.init_idx)
         other.connections.add(self.init_idx)
 
-    def calculate_data(self, queue_atoms):
+    def calculate_data(self, queue_atoms, n_points):
         """
-        Get all possible measurements for Atom, based on queue_atoms (fill self.proc_data_idx, self.init_proc_data_var,
-        self.trans_proc_data_var)
+        Get all possible measurements for Atom, based on queue_atoms (fill self.proc_data_idx, self.init_proc_data_value,
+        self.trans_proc_data_value)
         :param queue_atoms: atoms, based on which all connections should be performed
+        :param n_points: number of interpolation points
         """
 
         if len(queue_atoms) >= 1:
             self.proc_data_idx.append(queue_atoms[0].final_idx)
-            self.init_proc_data_var.append((
-                f'R{self.final_idx}_{queue_atoms[0].final_idx}',
-                self.distance(queue_atoms[0], 'init_coord')))
-            self.trans_proc_data_var.append((
-                f'R{self.final_idx}_{queue_atoms[0].final_idx}',
-                self.distance(queue_atoms[0], 'trans_coord')))
+            self.proc_data_var.append(f'R{self.final_idx}_{queue_atoms[0].final_idx}')
+            self.init_proc_data_value.append(self.distance(queue_atoms[0], 'init_coord'))
+            self.trans_proc_data_value.append(self.distance(queue_atoms[0], 'trans_coord'))
         if len(queue_atoms) >= 2:
             self.proc_data_idx.append(queue_atoms[1].final_idx)
-            self.init_proc_data_var.append((
-                f'A{self.final_idx}_{queue_atoms[0].final_idx}_{queue_atoms[1].final_idx}',
-                self.angle(queue_atoms[0], queue_atoms[1], 'init_coord')))
-            self.trans_proc_data_var.append((
-                f'A{self.final_idx}_{queue_atoms[0].final_idx}_{queue_atoms[1].final_idx}',
-                self.angle(queue_atoms[0], queue_atoms[1], 'trans_coord')))
+            self.proc_data_var.append(f'A{self.final_idx}_{queue_atoms[0].final_idx}_{queue_atoms[1].final_idx}')
+            self.init_proc_data_value.append(self.angle(queue_atoms[0], queue_atoms[1], 'init_coord'))
+            self.trans_proc_data_value.append(self.angle(queue_atoms[0], queue_atoms[1], 'trans_coord'))
         if len(queue_atoms) == 3:
             self.proc_data_idx.append(queue_atoms[2].final_idx)
-            self.init_proc_data_var.append((
-                f'D{self.final_idx}_{queue_atoms[0].final_idx}_{queue_atoms[1].final_idx}_'
-                f'{queue_atoms[2].final_idx}',
-                self.dihedral(queue_atoms[0], queue_atoms[1], queue_atoms[2], 'init_coord')))
-            self.trans_proc_data_var.append((
-                f'D{self.final_idx}_{queue_atoms[0].final_idx}_{queue_atoms[1].final_idx}_'
-                f'{queue_atoms[2].final_idx}',
-                self.dihedral(queue_atoms[0], queue_atoms[1], queue_atoms[2], 'trans_coord')))
+            self.proc_data_var.append(f'D{self.final_idx}_{queue_atoms[0].final_idx}_{queue_atoms[1].final_idx}_'
+                                      f'{queue_atoms[2].final_idx}')
+            self.init_proc_data_value.append(
+                self.dihedral(queue_atoms[0], queue_atoms[1], queue_atoms[2], 'init_coord'))
+            self.trans_proc_data_value.append(
+                self.dihedral(queue_atoms[0], queue_atoms[1], queue_atoms[2], 'trans_coord'))
+        self.interpolate(n_points)
+        self.init_proc_data_value = [self.init_proc_data_value]
+        self.trans_proc_data_value = [self.trans_proc_data_value]
 
     def distance(self, other: 'Atom', attr_name: str) -> float:
         """
@@ -184,8 +189,9 @@ class Atom:
         :return: distance
         """
 
-        if attr_name not in ('init_coord', 'trans_coord'):
-            raise AttributeError(f"Invalid attribute name: '{attr_name}'. Must be 'init_coord' or 'trans_coord'.")
+        assert attr_name in (
+            'init_coord',
+            'trans_coord'), f"Invalid attribute name: '{attr_name}'. Must be 'init_coord' or 'trans_coord'"
         return np.linalg.norm(getattr(self, attr_name) - getattr(other, attr_name))
 
     def angle(self, other_1: 'Atom', other_2: 'Atom', attr_name: str) -> float:
@@ -197,8 +203,9 @@ class Atom:
         :return: angle in degrees
         """
 
-        if attr_name not in ('init_coord', 'trans_coord'):
-            raise AttributeError(f"Invalid attribute name: '{attr_name}'. Must be 'init_coord' or 'trans_coord'.")
+        assert attr_name in (
+            'init_coord',
+            'trans_coord'), f"Invalid attribute name: '{attr_name}'. Must be 'init_coord' or 'trans_coord'"
 
         # Calculate vectors self-other_1 and other_2-other_1
         vec1 = getattr(self, attr_name) - getattr(other_1, attr_name)
@@ -216,8 +223,9 @@ class Atom:
         :return: dihedral in degrees
         """
 
-        if attr_name not in ('init_coord', 'trans_coord'):
-            raise AttributeError(f"Invalid attribute name: '{attr_name}'. Must be 'init_coord' or 'trans_coord'.")
+        assert attr_name in (
+            'init_coord',
+            'trans_coord'), f"Invalid attribute name: '{attr_name}'. Must be 'init_coord' or 'trans_coord'"
 
         # Calculate vectors self-other_1, other_2-other_1 and other_3-other_2
         vec_1 = -np.subtract(getattr(other_1, attr_name), getattr(self, attr_name))
@@ -263,12 +271,25 @@ class Atom:
 
         return longest_path[1:]
 
+    def interpolate(self, n_points):
+        """
+        Calculate interpolation points between initial and transformed atom distance, angle and dihedral
+        :param n_points: number of interpolation points
+        :return:
+        """
+        for start, end in zip(self.init_proc_data_value, self.trans_proc_data_value):
+            points = np.linspace(start, end, n_points + 2)[1:-1]
+            self.interpolation_points.append(points.tolist())
+        self.interpolation_points = list(map(list, zip(*self.interpolation_points)))
+        self.interpolation_points.extend([[]] * (n_points - len(self.interpolation_points)))
 
-def process_atoms_list(atoms_list: List[Atom]) -> Tuple[List[Atom], List[int]]:
+
+def process_atoms_list(atoms_list: List[Atom], n_points: int) -> Tuple[List[Atom], List[int]]:
     """
     Calculate all output data for all atoms in atoms_list using DFS and maximum column widths for all columns in
     output file
     :param atoms_list:
+    :param n_points: number of interpolation points
     :return: atoms_list, column_widths
     """
 
@@ -290,12 +311,12 @@ def process_atoms_list(atoms_list: List[Atom]) -> Tuple[List[Atom], List[int]]:
 
         # Find all atoms, based on which all the data for current atom will be calculated
         route = atom.route(list(compress(atoms_list, visited)))
-        atom.calculate_data(route)
+        atom.calculate_data(route, n_points)
 
         # Update string formats
         column_widths = [a if a > b else b for a, b in
-                         zip(column_widths, [len(col[0]) for col in atom.init_proc_data_var] + [0] * (
-                                 len(column_widths) - len(atom.init_proc_data_var)))]
+                         zip(column_widths, [len(col) for col in atom.proc_data_var] + [0] * (
+                                 len(column_widths) - len(atom.proc_data_var)))]
 
         # Add atom connections to queue
         for i in atom.connections:
@@ -315,21 +336,18 @@ def find_subgraphs(atoms_list: List[Atom]) -> List[List[int]]:
     visited = [False] * len(atoms_list)
     subgraphs = []
 
-    def dfs(node_index: int, component: List[int]):
-        stack = [node_index]
-        while stack:
-            current = stack.pop()
-            if not visited[current]:
-                visited[current] = True
-                component.append(current)
-                for neighbor in atoms_list[current].connections:
-                    if not visited[neighbor]:
-                        stack.append(neighbor)
-
     for i in range(len(atoms_list)):
         if not visited[i]:
             component = []
-            dfs(i, component)
+            stack = [i]
+            while stack:
+                current = stack.pop()
+                if not visited[current]:
+                    visited[current] = True
+                    component.append(current)
+                    for neighbor in atoms_list[current].connections:
+                        if not visited[neighbor]:
+                            stack.append(neighbor)
             subgraphs.append(component)
 
     return subgraphs
@@ -337,7 +355,7 @@ def find_subgraphs(atoms_list: List[Atom]) -> List[List[int]]:
 
 def find_closest_pair_between_subgraphs(atoms_list: List[Atom], subgraphs: List[List[int]]) -> List[dict]:
     """
-    Get a pair of atoms from different subgraphs, which have shortest distance
+    Get a pair of atoms from different subgraphs, which have the shortest distance
     :param atoms_list:
     :param subgraphs:
     :return:
@@ -374,30 +392,64 @@ def find_closest_pair_between_subgraphs(atoms_list: List[Atom], subgraphs: List[
                                                key=itemgetter('graph1'))]
 
 
-def write_file():
-    pass
+def write_z_matrix(file_path: AnyStr, title: str, atoms_list: List[Atom], int_format: int, column_widths: List[int],
+                   coord_var_name: str, point_idx: int = 0):
+    """
+    Write z-matrix to file
+    :param file_path: path to output file
+    :param title: molecule title
+    :param atoms_list: list of atoms
+    :param int_format: length of integers in output file
+    :param column_widths: widths of columns in output file
+    :param coord_var_name: name of coordinate array in Atom to put into file
+    :param point_idx: number of interpolation point in list (0 for initial and transformed)
+    :return:
+    """
+    assert coord_var_name in ('init_proc_data_value', 'trans_proc_data_value', 'interpolation_points'), \
+        (f"Invalid attribute name: '{coord_var_name}'. Must be 'init_proc_data_value', 'trans_proc_data_value' or"
+         f" 'interpolation_points'")
+    with open(file_path, 'w', encoding='utf8') as f:
+        f.write(HEAD.format(title=title))
+        for atom in atoms_list:
+            line = '  '.join(
+                f"{str(idx).ljust(int_format)}  {str(var).ljust(column_widths[i])}" for i, (idx, var) in
+                enumerate(zip(atom.proc_data_idx, atom.proc_data_var)))
+            line = f'{atom.name}  {line}\n'
+            f.write(line)
+
+        f.write('\n')
+        for atom in atoms_list:
+            for var, value in zip(atom.proc_data_var, getattr(atom, coord_var_name)[point_idx]):
+                f.write(f"{var.ljust(max(column_widths))}  =  {value:.7f}\n")
+
+        f.write(START_MATRIX)
+
+        for atom in atoms_list:
+            for i, var in enumerate(atom.proc_data_var):
+                f.write(" " * 12 + f"{i + 1}," + "".join(
+                    f"  {idx.rjust(int_format)}," for idx in re.sub(r"[a-zA-Z]", "", var).split("_")) + "\n")
+        f.write(" $END \n")
 
 
-def main(xyz_file_start, xyz_file_end, zmt_folder_out, debug_connections_out, coef):
+def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
     # read original xyz files without header
-    with open(xyz_file_start, encoding='utf8') as f:
-        xyz_start_coord = f.readlines()
-        title = xyz_start_coord[1].strip()
-        xyz_start_coord = xyz_start_coord[2:]
-    with open(xyz_file_end, encoding='utf8') as f:
-        xyz_end_coord = f.readlines()[2:]
+    with open(xyz_file_init, encoding='utf8') as f:
+        xyz_init_coord = f.readlines()
+        title = xyz_init_coord[1].strip()
+        xyz_init_coord = xyz_init_coord[2:]
+    with open(xyz_file_trans, encoding='utf8') as f:
+        xyz_trans_coord = f.readlines()[2:]
 
     # saving initial and transformed coordinates into data structure
-    atoms_list = [Atom(i, start_line, end_line) for i, (start_line, end_line) in
-                  enumerate(zip(xyz_start_coord, xyz_end_coord))]
+    atoms_list = [Atom(i, init_line, trans_line) for i, (init_line, trans_line) in
+                  enumerate(zip(xyz_init_coord, xyz_trans_coord))]
 
     # create graph connections (except for hydrogens)
     for atom1 in atoms_list:
         for atom2 in atoms_list:
             if (atom1.name not in VALENCY_ONE and atom2.name not in VALENCY_ONE and
                     atom1.init_idx != atom2.init_idx and
-                    atom1.distance(atom2, 'init_coord') <= coef * (
-                            RADIUS_TABLE[atom1.name] + RADIUS_TABLE[atom2.name])):
+                    atom1.distance(atom2, 'init_coord') <= RADIUS_TABLE[atom1.name] + RADIUS_TABLE[atom2.name]):
                 atom1.connect(atom2)
 
     while len(subgraphs := find_subgraphs(atoms_list)) != 1:
@@ -409,64 +461,87 @@ def main(xyz_file_start, xyz_file_end, zmt_folder_out, debug_connections_out, co
                   f"({list(atoms_list[distance['index2']].init_coord)})")
             atoms_list[distance['index1']].connect(atoms_list[distance['index2']])
 
-    if debug_connections_out:
-        with open(debug_connections_out, 'w', encoding='utf8') as f:
-            f.write('source_index,name,initial_coord,trans_coord,connections\n')
-            f.writelines(
-                f'{atom.init_idx},{atom.name},{atom.init_coord},{atom.trans_coord},{sorted(atom.connections)}\n' for
-                atom in atoms_list)
+    # if debug_connections_out:
+    #    with open(debug_connections_out, 'w', encoding='utf8') as f:
+    #        f.write('source_index,name,initial_coord,trans_coord,connections\n')
+    #        f.writelines(
+    #            f'{atom.init_idx},{atom.name},{atom.init_coord},{atom.trans_coord},{sorted(atom.connections)}\n' for
+    #            atom in atoms_list)
 
-    atoms_list, column_widths = process_atoms_list(atoms_list)
+    atoms_list, column_widths = process_atoms_list(atoms_list, n_points)
     int_format = len(str(len(atoms_list)))
 
-    zmt_file_start_out = os.path.join(zmt_folder_out, os.path.basename(xyz_file_start) + '.inp')
-    zmt_file_end_out = os.path.join(zmt_folder_out, os.path.basename(xyz_file_end) + '.inp')
+    #zmt_file_init_out = os.path.join(zmt_folder_out, os.path.basename(xyz_file_init) + '.inp')
+    write_z_matrix(file_path=os.path.join(zmt_folder_out, os.path.basename(xyz_file_init) + '.inp'),
+                   title=title,
+                   atoms_list=atoms_list,
+                   int_format=int_format,
+                   column_widths=column_widths,
+                   coord_var_name='init_proc_data_value')
+    write_z_matrix(file_path=os.path.join(zmt_folder_out, os.path.basename(xyz_file_trans) + '.inp'),
+                   title=title,
+                   atoms_list=atoms_list,
+                   int_format=int_format,
+                   column_widths=column_widths,
+                   coord_var_name='init_proc_data_value')
+    for i in range(n_points):
+        filename = (f"{os.path.splitext(os.path.basename(xyz_file_init))[0]}_"
+                    f"{os.path.splitext(os.path.basename(xyz_file_trans))[0]}_{i+1}.inp")
+        write_z_matrix(file_path=os.path.join(zmt_folder_out, filename),
+                       title=title,
+                       atoms_list=atoms_list,
+                       int_format=int_format,
+                       column_widths=column_widths,
+                       coord_var_name='interpolation_points',
+                       point_idx=i)
+    #zmt_file_trans_out = os.path.join(zmt_folder_out, os.path.basename(xyz_file_trans) + '.inp')
 
-    with (open(zmt_file_start_out, 'w', encoding='utf8') as f_start,
-          open(zmt_file_end_out, 'w', encoding='utf8') as f_end):
-        f_start.write(HEAD.format(title=title))
-        f_end.write(HEAD.format(title=title))
-        for atom in atoms_list:
-            start_line = '  '.join(
-                f"{str(idx).ljust(int_format)}  {str(var[0]).ljust(column_widths[i])}" for i, (idx, var) in
-                enumerate(zip(atom.proc_data_idx, atom.init_proc_data_var)))
-            start_line = f'{atom.name}  {start_line}\n'
-            f_start.write(start_line)
-
-            end_line = '  '.join(
-                f"{str(idx).ljust(int_format)}  {str(var[0]).ljust(column_widths[i])}" for i, (idx, var) in
-                enumerate(zip(atom.proc_data_idx, atom.trans_proc_data_var)))
-            end_line = f'{atom.name}  {end_line}\n'
-            f_end.write(end_line)
-        f_start.write('\n')
-        f_end.write('\n')
-        for atom in atoms_list:
-            for var in atom.init_proc_data_var:
-                f_start.write(f"{var[0].ljust(max(column_widths))}  =  {var[1]:.7f}\n")
-            for var in atom.trans_proc_data_var:
-                f_end.write(f"{var[0].ljust(max(column_widths))}  =  {var[1]:.7f}\n")
-
-        f_start.write(START_MATRIX)
-        f_end.write(START_MATRIX)
-
-        for atom in atoms_list:
-            for i, var in enumerate(atom.init_proc_data_var):
-                f_start.write(" " * 12 + f"{i + 1}," + "".join(
-                    f"  {idx.rjust(int_format)}," for idx in re.sub(r"[a-zA-Z]", "", var[0]).split("_")) + "\n")
-            for i, var in enumerate(atom.trans_proc_data_var):
-                f_end.write(" " * 12 + f"{i + 1}," + "".join(
-                    f"  {idx.rjust(int_format)}," for idx in re.sub(r"[a-zA-Z]", "", var[0]).split("_")) + "\n")
-        f_start.write(" $END \n")
-        f_end.write(" $END \n")
+    #with (open(zmt_file_init_out, 'w', encoding='utf8') as f_init,
+    #      open(zmt_file_trans_out, 'w', encoding='utf8') as f_trans):
+    #    f_init.write(HEAD.format(title=title))
+    #    f_trans.write(HEAD.format(title=title))
+    #    for atom in atoms_list:
+    #        init_line = '  '.join(
+    #            f"{str(idx).ljust(int_format)}  {str(var).ljust(column_widths[i])}" for i, (idx, var) in
+    #            enumerate(zip(atom.proc_data_idx, atom.proc_data_var)))
+    #        init_line = f'{atom.name}  {init_line}\n'
+    #        f_init.write(init_line)
+    #
+    #        trans_line = '  '.join(
+    #            f"{str(idx).ljust(int_format)}  {str(var).ljust(column_widths[i])}" for i, (idx, var) in
+    #            enumerate(zip(atom.proc_data_idx, atom.proc_data_var)))
+    #        trans_line = f'{atom.name}  {trans_line}\n'
+    #        f_trans.write(trans_line)
+    #    f_init.write('\n')
+    #    f_trans.write('\n')
+    #    for atom in atoms_list:
+    #        for var, value in zip(atom.proc_data_var, atom.init_proc_data_value):
+    #            f_init.write(f"{var.ljust(max(column_widths))}  =  {value:.7f}\n")
+    #        for var, value in zip(atom.proc_data_var, atom.trans_proc_data_value):
+    #            f_trans.write(f"{var.ljust(max(column_widths))}  =  {value:.7f}\n")
+    #
+    #    f_init.write(START_MATRIX)
+    #    f_trans.write(START_MATRIX)
+    #
+    #    for atom in atoms_list:
+    #        for i, var in enumerate(atom.proc_data_var):
+    #            f_init.write(" " * 12 + f"{i + 1}," + "".join(
+    #                f"  {idx.rjust(int_format)}," for idx in re.sub(r"[a-zA-Z]", "", var).split("_")) + "\n")
+    #        for i, var in enumerate(atom.proc_data_var):
+    #            f_trans.write(" " * 12 + f"{i + 1}," + "".join(
+    #                f"  {idx.rjust(int_format)}," for idx in re.sub(r"[a-zA-Z]", "", var).split("_")) + "\n")
+    #    f_init.write(" $END \n")
+    #    f_trans.write(" $END \n")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--xyz-file-start')
-    parser.add_argument('--xyz-file-end')
-    parser.add_argument('--zmt-folder-out')
-    parser.add_argument('--debug-connections-out', default=None)
-    parser.add_argument('--coef', type=float, default=1)
+    parser.add_argument('--xyz-file-init', help='XYZ file with initial atom coordinates')
+    parser.add_argument('--xyz-file-trans', help='XYZ file with transformed atom coordinates')
+    parser.add_argument('--zmt-folder-out', help='Output folder for z-matrices')
+    parser.add_argument('--n-points', type=int, default=0, help='Number of interpolation points')
+    # parser.add_argument('--debug-connections-out', default=None, help='Debug file for connections between atoms')
+    # parser.add_argument('--coef', type=float, default=1)
 
     args = parser.parse_args()
     main(**vars(args))
