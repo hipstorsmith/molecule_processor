@@ -297,7 +297,6 @@ class Atom:
             for neighbor in filter(lambda atom: atom.init_idx in current_atom.connections, graph):
                 if self.validate_atom(neighbor, path, allow_valency_one):
                     new_path = path + [neighbor]
-                    # TODO: check validate angle!
                     if self.validate_angle(new_path) and len(new_path) <= required_length:
                         stack.append((neighbor, new_path))
 
