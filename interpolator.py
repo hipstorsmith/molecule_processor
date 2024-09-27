@@ -525,7 +525,7 @@ def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
                    atoms_list=atoms_list,
                    int_format=int_format,
                    column_widths=column_widths,
-                   coord_var_name='init_proc_data_value')
+                   coord_var_name='trans_proc_data_value')
     for i in range(n_points):
         filename = (f"{os.path.splitext(os.path.basename(xyz_file_init))[0]}_"
                     f"{os.path.splitext(os.path.basename(xyz_file_trans))[0]}_{i + 1}.inp")
