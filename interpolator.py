@@ -10,7 +10,7 @@ from operator import itemgetter
 
 RADIUS_TABLE = {atom.symbol: (atom.covalent_radius or 246) / 100 for atom in mendeleev.get_all_elements()}
 HEAD = """ $CONTRL RUNTYP=energy SCFTYP=RHF dfttyp=none
-  MAXIT=200 ICHARG=0 MULT=1 d5=.t. nzvar=270
+  MAXIT=200 ICHARG=0 MULT=1 d5=.t. nzvar={nzvar}
   exetyp=check coord=zmt
  $END
  $SYSTEM TIMLIM=3600000 MWORDS=350 $END
@@ -214,8 +214,8 @@ class Atom:
 
         return np.degrees(np.arccos(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))))
 
-    #@staticmethod
-    #def fix_dihedral(angle):
+    # @staticmethod
+    # def fix_dihedral(angle):
     #    return angle + 360 if angle < 0 else angle #-90 > angle >= -180 else angle
 
     def dihedral(self, other_1: 'Atom', other_2: 'Atom', other_3: 'Atom', attr_name: str) -> float:
@@ -248,7 +248,7 @@ class Atom:
         x = np.dot(v, w)
         y = np.dot(np.cross(vec_2, v), w)
 
-        return np.degrees(np.arctan2(y, x)) #self.fix_dihedral(np.degrees(np.arctan2(y, x)))
+        return np.degrees(np.arctan2(y, x))  # self.fix_dihedral(np.degrees(np.arctan2(y, x)))
 
     @staticmethod
     def validate_angle(path: List['Atom']):
@@ -328,9 +328,13 @@ class Atom:
         :return:
         """
 
-        if (len(self.trans_proc_data_value) == 3) and (abs(self.trans_proc_data_value[2] - self.init_proc_data_value[2]) >= 180):
-            self.init_proc_data_value[2] = self.init_proc_data_value[2] + 360 if self.init_proc_data_value[2] < 0 else self.init_proc_data_value[2]
-            self.trans_proc_data_value[2] = self.trans_proc_data_value[2] + 360 if self.trans_proc_data_value[2] < 0 else self.trans_proc_data_value[2]
+        if (len(self.trans_proc_data_value) == 3) and (
+                abs(self.trans_proc_data_value[2] - self.init_proc_data_value[2]) >= 180):
+            self.init_proc_data_value[2] = self.init_proc_data_value[2] + 360 if self.init_proc_data_value[2] < 0 else \
+            self.init_proc_data_value[2]
+            self.trans_proc_data_value[2] = self.trans_proc_data_value[2] + 360 if self.trans_proc_data_value[
+                                                                                       2] < 0 else \
+            self.trans_proc_data_value[2]
         for var_idx, (start, end) in enumerate(zip(self.init_proc_data_value, self.trans_proc_data_value)):
             points = np.linspace(start, end, n_points + 2)[1:-1]
             self.interpolation_points.append(points.tolist())
@@ -467,7 +471,7 @@ def write_z_matrix(file_path: AnyStr, title: str, atoms_list: List[Atom], int_fo
         (f"Invalid attribute name: '{coord_var_name}'. Must be 'init_proc_data_value', 'trans_proc_data_value' or"
          f" 'interpolation_points'")
     with open(file_path, 'w', encoding='utf8') as f:
-        f.write(HEAD.format(title=title))
+        f.write(HEAD.format(title=title, nzvar=3 * len(atoms_list) - 6))
         for atom in atoms_list:
             line = '  '.join(
                 f"{str(idx).ljust(int_format)}  {str(var).ljust(column_widths[i])}" for i, (idx, var) in
