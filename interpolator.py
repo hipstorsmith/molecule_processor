@@ -5,12 +5,12 @@ import re
 import os
 from collections import deque
 from typing import List, Tuple, AnyStr
-from itertools import groupby, compress
+from itertools import groupby, compress, permutations
 from operator import itemgetter
 
 RADIUS_TABLE = {atom.symbol: (atom.covalent_radius or 246) / 100 for atom in mendeleev.get_all_elements()}
 HEAD = """ $CONTRL RUNTYP=energy SCFTYP=RHF dfttyp=none
-  MAXIT=200 ICHARG=0 MULT=1 d5=.t. nzvar=270
+  MAXIT=200 ICHARG=0 MULT=1 d5=.t. nzvar={nzvar}
   exetyp=check coord=zmt
  $END
  $SYSTEM TIMLIM=3600000 MWORDS=350 $END
@@ -92,6 +92,7 @@ class Atom:
             args:
                 other_1:
                 other_2:
+                radians: calculate angle in radians
                 attr_name: which coordinates should be used: 'init_coord' or 'trans_coord'
             return:
                 angle in degrees
@@ -106,7 +107,7 @@ class Atom:
                 dihedral in degrees
             route
                 Calculate the longest possible route in graph, required for calculation of output parameters. Route
-                should be shorter than 4 nodes (including current) and should not include atoms with one connection
+                should be shorter than 4 atoms (including current) and should not include atoms with one connection
                 only, because of their instability
                 args:
                     graph:
@@ -213,6 +214,10 @@ class Atom:
 
         return np.degrees(np.arccos(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))))
 
+    # @staticmethod
+    # def fix_dihedral(angle):
+    #    return angle + 360 if angle < 0 else angle #-90 > angle >= -180 else angle
+
     def dihedral(self, other_1: 'Atom', other_2: 'Atom', other_3: 'Atom', attr_name: str) -> float:
         """
         Calculate dihedral: self-other_1-other_2-other_3
@@ -243,33 +248,78 @@ class Atom:
         x = np.dot(v, w)
         y = np.dot(np.cross(vec_2, v), w)
 
-        return np.degrees(np.arctan2(y, x))
+        return np.degrees(np.arctan2(y, x))  # self.fix_dihedral(np.degrees(np.arctan2(y, x)))
 
-    def route(self, graph) -> List['Atom']:
+    @staticmethod
+    def validate_angle(path: List['Atom']):
+        if len(path) >= 3:
+            atom_a, atom_b, atom_c = path[-3], path[-2], path[-1]
+            return atom_a.angle(atom_b, atom_c, 'init_coord') not in (0, 180)
+        return True
+
+    def validate_atom(self, atom, path, allow_valency_one):
+        """Checks if the atom is valid to be added to the path based on FORBIDDEN and angle conditions."""
+        if atom in path or atom == self:
+            return False
+        if not allow_valency_one and atom.name in VALENCY_ONE:
+            return False
+        return True
+
+    def fallback_atoms(self, fallback_atoms, max_len):
+        for atom_selection in sorted(permutations(fallback_atoms, max_len - 1),
+                                     key=lambda selection: sum(atom.name not in VALENCY_ONE for atom in selection),
+                                     reverse=True):
+            if len(atom_selection) < 2:
+                return [self] + [atom_selection]
+            else:
+                if self.validate_angle([self] + list(atom_selection)[:-1]) and self.validate_angle(
+                        [self] + list(atom_selection)):
+                    return [self] + [atom_selection]
+
+        return []
+
+    def route(self, graph: List['Atom'], allow_valency_one: bool = False) -> List['Atom']:
         """
         Calculate the longest possible route in graph, required for calculation of output parameters. Route should be
-        shorter than 4 nodes (including current) and should not include atoms with one connection only, because of
+        shorter than 4 atoms (including current) and should not include atoms with one connection only, because of
         their instability
-        :param graph:
+        :param graph: list of already processed atoms and atoms already in
+        :param allow_valency_one: allow anchoring on atoms with valency = 1
         :return: list of atoms, connected to chain
         """
+
+        required_length = 4 if self.final_idx > 3 else self.final_idx
 
         longest_path = []
         stack = [(self, [self])]
 
-        # TODO: add extra checks for 180 angles and small graphs
-
         while stack:
-            current_node, path = stack.pop()
-            if len(path) > len(longest_path):
-                longest_path = path.copy()
-            for neighbor in filter(lambda atom: atom.init_idx in current_node.connections, graph):
-                if neighbor not in path and neighbor.name not in VALENCY_ONE:
+            current_atom, path = stack.pop()
+            if len(path) == required_length and self.validate_angle(path):
+                if len(path) > len(longest_path):
+                    longest_path = path.copy()
+            for neighbor in filter(lambda atom: atom.init_idx in current_atom.connections, graph):
+                if self.validate_atom(neighbor, path, allow_valency_one):
                     new_path = path + [neighbor]
-                    if len(new_path) <= 4:
+                    if self.validate_angle(new_path) and len(new_path) <= required_length:
                         stack.append((neighbor, new_path))
 
-        return longest_path[1:]
+        if len(longest_path) == required_length:
+            return longest_path[1:]
+
+        fallback_atoms = [atom for atom in graph if self.validate_atom(atom, [], allow_valency_one)]
+        selected_path = self.fallback_atoms(fallback_atoms, required_length)
+        if len(selected_path) == required_length:
+            return selected_path[1:]  # Exclude initial atom
+
+        fallback_atoms = [atom for atom in graph if atom not in selected_path and atom != self]
+        selected_path = self.fallback_atoms(fallback_atoms, required_length)
+        if len(selected_path) == required_length:
+            return selected_path[1:]
+
+        selected_path = [self] + sorted([atom for atom in graph if atom != self],
+                                        key=lambda atom: atom.name in VALENCY_ONE)[:required_length - 1]
+        return selected_path[1:]
 
     def interpolate(self, n_points):
         """
@@ -277,7 +327,15 @@ class Atom:
         :param n_points: number of interpolation points
         :return:
         """
-        for start, end in zip(self.init_proc_data_value, self.trans_proc_data_value):
+
+        if (len(self.trans_proc_data_value) == 3) and (
+                abs(self.trans_proc_data_value[2] - self.init_proc_data_value[2]) >= 180):
+            self.init_proc_data_value[2] = self.init_proc_data_value[2] + 360 if self.init_proc_data_value[2] < 0 else \
+            self.init_proc_data_value[2]
+            self.trans_proc_data_value[2] = self.trans_proc_data_value[2] + 360 if self.trans_proc_data_value[
+                                                                                       2] < 0 else \
+            self.trans_proc_data_value[2]
+        for var_idx, (start, end) in enumerate(zip(self.init_proc_data_value, self.trans_proc_data_value)):
             points = np.linspace(start, end, n_points + 2)[1:-1]
             self.interpolation_points.append(points.tolist())
         self.interpolation_points = list(map(list, zip(*self.interpolation_points)))
@@ -298,10 +356,14 @@ def process_atoms_list(atoms_list: List[Atom], n_points: int) -> Tuple[List[Atom
     visited = [False] * len(atoms_list)
     processing_queue = deque()
 
+    allow_valency_one = sum(map(lambda a: a.name not in VALENCY_ONE, atoms_list)) <= 3
+
     # Find first atom with valency > 1
     start_idx = 0
     while atoms_list[start_idx].name in VALENCY_ONE:
         start_idx += 1
+        if start_idx == len(atoms_list):
+            break
     processing_queue.append(atoms_list[start_idx])
 
     while processing_queue:
@@ -310,7 +372,7 @@ def process_atoms_list(atoms_list: List[Atom], n_points: int) -> Tuple[List[Atom
         visited[atom.init_idx] = True
 
         # Find all atoms, based on which all the data for current atom will be calculated
-        route = atom.route(list(compress(atoms_list, visited)))
+        route = atom.route(list(compress(atoms_list, visited)), allow_valency_one)
         atom.calculate_data(route, n_points)
 
         # Update string formats
@@ -409,7 +471,7 @@ def write_z_matrix(file_path: AnyStr, title: str, atoms_list: List[Atom], int_fo
         (f"Invalid attribute name: '{coord_var_name}'. Must be 'init_proc_data_value', 'trans_proc_data_value' or"
          f" 'interpolation_points'")
     with open(file_path, 'w', encoding='utf8') as f:
-        f.write(HEAD.format(title=title))
+        f.write(HEAD.format(title=title, nzvar=3 * len(atoms_list) - 6))
         for atom in atoms_list:
             line = '  '.join(
                 f"{str(idx).ljust(int_format)}  {str(var).ljust(column_widths[i])}" for i, (idx, var) in
@@ -461,17 +523,9 @@ def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
                   f"({list(atoms_list[distance['index2']].init_coord)})")
             atoms_list[distance['index1']].connect(atoms_list[distance['index2']])
 
-    # if debug_connections_out:
-    #    with open(debug_connections_out, 'w', encoding='utf8') as f:
-    #        f.write('source_index,name,initial_coord,trans_coord,connections\n')
-    #        f.writelines(
-    #            f'{atom.init_idx},{atom.name},{atom.init_coord},{atom.trans_coord},{sorted(atom.connections)}\n' for
-    #            atom in atoms_list)
-
     atoms_list, column_widths = process_atoms_list(atoms_list, n_points)
     int_format = len(str(len(atoms_list)))
 
-    #zmt_file_init_out = os.path.join(zmt_folder_out, os.path.basename(xyz_file_init) + '.inp')
     write_z_matrix(file_path=os.path.join(zmt_folder_out, os.path.basename(xyz_file_init) + '.inp'),
                    title=title,
                    atoms_list=atoms_list,
@@ -483,10 +537,10 @@ def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
                    atoms_list=atoms_list,
                    int_format=int_format,
                    column_widths=column_widths,
-                   coord_var_name='init_proc_data_value')
+                   coord_var_name='trans_proc_data_value')
     for i in range(n_points):
         filename = (f"{os.path.splitext(os.path.basename(xyz_file_init))[0]}_"
-                    f"{os.path.splitext(os.path.basename(xyz_file_trans))[0]}_{i+1}.inp")
+                    f"{os.path.splitext(os.path.basename(xyz_file_trans))[0]}_{i + 1}.inp")
         write_z_matrix(file_path=os.path.join(zmt_folder_out, filename),
                        title=title,
                        atoms_list=atoms_list,
@@ -494,44 +548,6 @@ def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
                        column_widths=column_widths,
                        coord_var_name='interpolation_points',
                        point_idx=i)
-    #zmt_file_trans_out = os.path.join(zmt_folder_out, os.path.basename(xyz_file_trans) + '.inp')
-
-    #with (open(zmt_file_init_out, 'w', encoding='utf8') as f_init,
-    #      open(zmt_file_trans_out, 'w', encoding='utf8') as f_trans):
-    #    f_init.write(HEAD.format(title=title))
-    #    f_trans.write(HEAD.format(title=title))
-    #    for atom in atoms_list:
-    #        init_line = '  '.join(
-    #            f"{str(idx).ljust(int_format)}  {str(var).ljust(column_widths[i])}" for i, (idx, var) in
-    #            enumerate(zip(atom.proc_data_idx, atom.proc_data_var)))
-    #        init_line = f'{atom.name}  {init_line}\n'
-    #        f_init.write(init_line)
-    #
-    #        trans_line = '  '.join(
-    #            f"{str(idx).ljust(int_format)}  {str(var).ljust(column_widths[i])}" for i, (idx, var) in
-    #            enumerate(zip(atom.proc_data_idx, atom.proc_data_var)))
-    #        trans_line = f'{atom.name}  {trans_line}\n'
-    #        f_trans.write(trans_line)
-    #    f_init.write('\n')
-    #    f_trans.write('\n')
-    #    for atom in atoms_list:
-    #        for var, value in zip(atom.proc_data_var, atom.init_proc_data_value):
-    #            f_init.write(f"{var.ljust(max(column_widths))}  =  {value:.7f}\n")
-    #        for var, value in zip(atom.proc_data_var, atom.trans_proc_data_value):
-    #            f_trans.write(f"{var.ljust(max(column_widths))}  =  {value:.7f}\n")
-    #
-    #    f_init.write(START_MATRIX)
-    #    f_trans.write(START_MATRIX)
-    #
-    #    for atom in atoms_list:
-    #        for i, var in enumerate(atom.proc_data_var):
-    #            f_init.write(" " * 12 + f"{i + 1}," + "".join(
-    #                f"  {idx.rjust(int_format)}," for idx in re.sub(r"[a-zA-Z]", "", var).split("_")) + "\n")
-    #        for i, var in enumerate(atom.proc_data_var):
-    #            f_trans.write(" " * 12 + f"{i + 1}," + "".join(
-    #                f"  {idx.rjust(int_format)}," for idx in re.sub(r"[a-zA-Z]", "", var).split("_")) + "\n")
-    #    f_init.write(" $END \n")
-    #    f_trans.write(" $END \n")
 
 
 if __name__ == '__main__':
@@ -540,8 +556,6 @@ if __name__ == '__main__':
     parser.add_argument('--xyz-file-trans', help='XYZ file with transformed atom coordinates')
     parser.add_argument('--zmt-folder-out', help='Output folder for z-matrices')
     parser.add_argument('--n-points', type=int, default=0, help='Number of interpolation points')
-    # parser.add_argument('--debug-connections-out', default=None, help='Debug file for connections between atoms')
-    # parser.add_argument('--coef', type=float, default=1)
 
     args = parser.parse_args()
     main(**vars(args))
