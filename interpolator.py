@@ -216,7 +216,7 @@ class Atom:
 
     @staticmethod
     def fix_dihedral(angle):
-        return angle + 360 if angle < 0 else angle
+        return angle + 360 #if -90 > angle >= -180 else angle
 
     def dihedral(self, other_1: 'Atom', other_2: 'Atom', other_3: 'Atom', attr_name: str) -> float:
         """
