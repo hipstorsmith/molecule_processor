@@ -214,6 +214,10 @@ class Atom:
 
         return np.degrees(np.arccos(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))))
 
+    @staticmethod
+    def fix_dihedral(angle):
+        return angle + 360 if angle < 0 else angle
+
     def dihedral(self, other_1: 'Atom', other_2: 'Atom', other_3: 'Atom', attr_name: str) -> float:
         """
         Calculate dihedral: self-other_1-other_2-other_3
@@ -244,7 +248,7 @@ class Atom:
         x = np.dot(v, w)
         y = np.dot(np.cross(vec_2, v), w)
 
-        return np.degrees(np.arctan2(y, x))
+        return self.fix_dihedral(np.degrees(np.arctan2(y, x)))
 
     @staticmethod
     def validate_angle(path: List['Atom']):
@@ -323,8 +327,10 @@ class Atom:
         :param n_points: number of interpolation points
         :return:
         """
-        for start, end in zip(self.init_proc_data_value, self.trans_proc_data_value):
+        for var_idx, (start, end) in enumerate(zip(self.init_proc_data_value, self.trans_proc_data_value)):
             points = np.linspace(start, end, n_points + 2)[1:-1]
+            if var_idx == 2:
+                points = np.array(self.fix_dihedral(point) for point in points)
             self.interpolation_points.append(points.tolist())
         self.interpolation_points = list(map(list, zip(*self.interpolation_points)))
         self.interpolation_points.extend([[]] * (n_points - len(self.interpolation_points)))
