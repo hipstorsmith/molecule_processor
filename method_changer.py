@@ -16,12 +16,12 @@ def method_changer(input_file, method_file, output_file):
     output_lines = []
     with open(method_file, encoding='utf8') as f:
         output_lines.extend(line for line in f)
-    data_found = False
 
     if not output_lines[-1].endswith('\n'):
         output_lines[-1] += '\n'
 
     # Read read input file after header ($DATA and $VEC groups)
+    data_found = False
     with open(input_file, encoding='utf8') as f:
         for line in f:
             if not data_found:
