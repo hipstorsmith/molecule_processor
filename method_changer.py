@@ -25,7 +25,7 @@ def method_changer(input_file, method_file, output_file):
     with open(input_file, encoding='utf8') as f:
         for line in f:
             if not data_found:
-                if 'DATA' in line:
+                if '$DATA' in line:
                     data_found = True
                     output_lines.append(line)
             else:

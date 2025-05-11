@@ -16,7 +16,7 @@ def vec_changer(input_file, vec_file, output_file):
     output_lines = []
     with open(input_file, encoding='utf8') as f:
         for line in f:
-            if 'VEC' in line:
+            if '$VEC' in line:
                 break
             output_lines.append(line)
 
