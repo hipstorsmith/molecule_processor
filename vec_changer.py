@@ -3,7 +3,7 @@ import os
 from glob import glob
 
 
-def vec_changer(input_file, vec_file, output_file):
+def vec_changer(input_file: str, vec_file: str, output_file: str):
     """
     Change $VEC group in the input_file
     :param input_file: input file with .inp extension
@@ -38,7 +38,7 @@ def vec_changer(input_file, vec_file, output_file):
         f.writelines(output_lines)
 
 
-def main(input_path, vec_file, output_path):
+def main(input_path: str, vec_file: str, output_path: str):
     if os.path.isdir(input_path):
         for input_file in glob(os.path.join(input_path, '*.inp')):
             output_file = os.path.join(output_path, os.path.basename(input_file))

@@ -3,7 +3,7 @@ import os
 from glob import glob
 
 
-def method_changer(input_file, method_file, output_file):
+def method_changer(input_file: str, method_file: str, output_file: str):
     """
     Change header in the input_file (everything except $DATA and $VEC groups)
     :param input_file: input file with .inp extension
@@ -35,7 +35,7 @@ def method_changer(input_file, method_file, output_file):
         f.writelines(output_lines)
 
 
-def main(input_path, method_file, output_path):
+def main(input_path: str, method_file: str, output_path: str):
     if os.path.isdir(input_path):
         for input_file in glob(os.path.join(input_path, '*.inp')):
             output_file = os.path.join(output_path, os.path.basename(input_file))
