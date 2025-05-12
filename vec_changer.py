@@ -43,7 +43,7 @@ def main(input_path, vec_file, output_path):
         for input_file in glob(os.path.join(input_path, '*.inp')):
             output_file = os.path.join(output_path, os.path.basename(input_file))
             vec_changer(input_file, vec_file, output_file)
-    elif (ext := os.path.splitext(input_path)) == '.inp':
+    elif (ext := os.path.splitext(input_path)[1]) == '.inp':
         output_file = os.path.join(output_path, os.path.basename(input_path))
         vec_changer(input_path, vec_file, output_file)
     else:
