@@ -526,21 +526,23 @@ def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
     atoms_list, column_widths = process_atoms_list(atoms_list, n_points)
     int_format = len(str(len(atoms_list)))
 
-    write_z_matrix(file_path=os.path.join(zmt_folder_out, os.path.basename(xyz_file_init) + '.inp'),
+    write_z_matrix(file_path=os.path.join(zmt_folder_out, os.path.splitext(os.path.basename(xyz_file_init))[0] + '.000.inp'),
                    title=title,
                    atoms_list=atoms_list,
                    int_format=int_format,
                    column_widths=column_widths,
                    coord_var_name='init_proc_data_value')
-    write_z_matrix(file_path=os.path.join(zmt_folder_out, os.path.basename(xyz_file_trans) + '.inp'),
+    write_z_matrix(file_path=os.path.join(zmt_folder_out, os.path.splitext(os.path.basename(xyz_file_init))[0] + '.100.inp'),
                    title=title,
                    atoms_list=atoms_list,
                    int_format=int_format,
                    column_widths=column_widths,
                    coord_var_name='trans_proc_data_value')
-    for i in range(n_points):
-        filename = (f"{os.path.splitext(os.path.basename(xyz_file_init))[0]}_"
-                    f"{os.path.splitext(os.path.basename(xyz_file_trans))[0]}_{i + 1}.inp")
+    for i in range(1, n_points):
+        coord = str(i * 100 // (n_points - 1)).zfill(3)
+        filename = os.path.splitext(os.path.basename(xyz_file_init))[0] + f'.{coord}.inp'
+        #filename = (f"{os.path.splitext(os.path.basename(xyz_file_init))[0]}_"
+        #            f"{os.path.splitext(os.path.basename(xyz_file_trans))[0]}_{i + 1}.inp")
         write_z_matrix(file_path=os.path.join(zmt_folder_out, filename),
                        title=title,
                        atoms_list=atoms_list,
