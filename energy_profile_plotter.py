@@ -11,6 +11,30 @@ def plot_energy_profile(energies: list[list], points_x: list[float], line_1_styl
                         line_1_marker: str, line_2_marker: str, line_1_marker_size: int, line_2_marker_size: int,
                         axis_line_width: float, label_font_size: float, x_min: float, y_min: float, x_max: float,
                         y_max: float, plot_title: str):
+    """
+    Read input files from folder, calculate ereorg, mingap and DeltaG and build an energies plot on both states
+    :param energies: list of energies. Each element is a list of two float energy values in two states
+    :param points_x: list of x coordinates for each point, represented by each file
+    :param line_1_style: line style for state_1 graph
+    :param line_2_style: line style for state_2 graph
+    :param line_1_width: line width for state_1 graph
+    :param line_2_width: line width for state_2 graph
+    :param line_1_color: line color for state_1 graph
+    :param line_2_color: line color for state_2 graph
+    :param line_1_marker: line marker for state_1 graph
+    :param line_2_marker: line marker for state_2 graph
+    :param line_1_marker_size: line marker size for state_1 graph
+    :param line_2_marker_size: line marker size for state_2 graph
+    :param axis_line_width:
+    :param label_font_size:
+    :param x_min: min x coordinate on a graph
+    :param y_min: min y coordinate on a graph
+    :param x_max: max x coordinate on a graph
+    :param y_max: max y coordinate on a graph
+    :param plot_title:
+    :return: ereorg, mingap, delta_g (float, float, float)
+    """
+
     fig = plt.figure(num=None, figsize=(10, 8), facecolor='white', edgecolor='white', frameon=True, clear=True)
     plt.title(plot_title, fontsize='xx-large')
     ax = fig.gca()
@@ -34,28 +58,42 @@ def plot_energy_profile(energies: list[list], points_x: list[float], line_1_styl
     plt.show()
 
 
-def calculate_profile(energies: list[list], lower_line: int):
+def calculate_profile(energies: list[list], line_order: list[int]):
+    """
+    Calculate mingap, ereorg and delta_g based on energy values in a list of states.
+    :param energies: list of energies. Each element is a list of two float energy values in two states
+    :param line_order: determine, which state line lies lower, so we can determine DeltaG from it
+    :return: ereorg, mingap, delta_g (float, float, float)
+    """
+
     mingap = float('inf')
     ereorg = 0
     delta_g = float('inf')
 
     for i, energy in enumerate(energies):
-        gap = energy[1] - energy[0]
+        # Calculate gap between higher and lower line state
+        gap = energy[line_order[1]] - energy[line_order[0]]
+
+        # Calculate minimum gap
         mingap = gap if gap < mingap else mingap
-        if energy[0] * energy[1] == 0 and gap > ereorg:
+        if energy[line_order[0]] * energy[line_order[1]] == 0 and gap > ereorg:
+            # Determine ereorg: gap in a point, where state energy is 0
             ereorg = gap
         if i == 0 or i == len(energies) - 1:
             continue
-        if energies[i - 1][lower_line] > energy[lower_line] > 0 and \
-                energies[i + 1][lower_line] > energy[lower_line] and \
-                energy[lower_line] < delta_g:
-            delta_g = energy[lower_line]
+        if energies[i - 1][line_order[0]] > energy[line_order[0]] > 0 and \
+                energies[i + 1][line_order[0]] > energy[line_order[0]] and \
+                energy[line_order[0]] < delta_g:
+            # DeltaG - smallest local non-zero minimum of an energy
+            delta_g = energy[line_order[0]]
 
     if delta_g == float('inf'):
-        border_values = [energies[i][lower_line] for i in (0, -1) if energies[i][lower_line] > 0]
+        border_values = [energies[i][line_order[0]] for i in (0, -1) if energies[i][line_order[0]] > 0]
         if border_values:
+            # In case if there is no local non-zero minimums - take the smallest non-zero border value as DeltaG
             delta_g = min(border_values)
         else:
+            # In case if there is no local non-zero minimums and non-zero border values DeltaG = 0
             delta_g = 0
 
     return ereorg, mingap, delta_g
@@ -66,27 +104,28 @@ def energy_profile(folder_path: str, line_1_style: str, line_2_style: str, line_
                    line_1_marker_size: int, line_2_marker_size: int, axis_line_width: float, label_font_size: float,
                    x_min: float, y_min: float, x_max: float, y_max: float, plot_title: str):
     """
-
-    :param folder_path:
-    :param line_1_style:
-    :param line_2_style:
-    :param line_1_width:
-    :param line_2_width:
-    :param line_1_color:
-    :param line_2_color:
-    :param line_1_marker:
-    :param line_2_marker:
-    :param line_1_marker_size:
-    :param line_2_marker_size:
+    Read input files from folder, calculate ereorg, mingap and DeltaG and build an energies plot on both states
+    :param folder_path: folder with .out files
+    :param line_1_style: line style for state_1 graph
+    :param line_2_style: line style for state_2 graph
+    :param line_1_width: line width for state_1 graph
+    :param line_2_width: line width for state_2 graph
+    :param line_1_color: line color for state_1 graph
+    :param line_2_color: line color for state_2 graph
+    :param line_1_marker: line marker for state_1 graph
+    :param line_2_marker: line marker for state_2 graph
+    :param line_1_marker_size: line marker size for state_1 graph
+    :param line_2_marker_size: line marker size for state_2 graph
     :param axis_line_width:
     :param label_font_size:
-    :param x_min:
-    :param y_min:
-    :param x_max:
-    :param y_max:
+    :param x_min: min x coordinate on a graph
+    :param y_min: min y coordinate on a graph
+    :param x_max: max x coordinate on a graph
+    :param y_max: max y coordinate on a graph
     :param plot_title:
-    :return:
+    :return: ereorg, mingap, delta_g (float, float, float)
     """
+
     files_list = glob(os.path.join(folder_path, '*.out'))
 
     # Get x-coordinate for all energy values
@@ -116,10 +155,12 @@ def energy_profile(folder_path: str, line_1_style: str, line_2_style: str, line_
                     energies.append([state_1, state_2])
                     break
 
+    line_order = [0, 1] if lower_line == 0 else [1, 0]
+
     # Recalculate state energies from Daltons to Ev
     energies = [[(e - min_energy) * COEF_DALTON_TO_EV for e in state] for state in energies]
 
-    ereorg, mingap, delta_g = calculate_profile(energies, lower_line)
+    ereorg, mingap, delta_g = calculate_profile(energies, line_order)
 
     plot_energy_profile(energies, points_x, line_1_style, line_2_style, line_1_width, line_2_width, line_1_color,
                         line_2_color, line_1_marker, line_2_marker, line_1_marker_size, line_2_marker_size,
