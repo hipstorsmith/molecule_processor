@@ -1,0 +1,170 @@
+import os
+import argparse
+import matplotlib.pyplot as plt
+from glob import glob
+
+COEF_DALTON_TO_EV = 27.2114
+
+
+def plot_energy_profile(energies: list[list], points_x: list[float], line_1_style: str, line_2_style: str,
+                        line_1_width: float, line_2_width: float, line_1_color: str, line_2_color: str,
+                        line_1_marker: str, line_2_marker: str, line_1_marker_size: int, line_2_marker_size: int,
+                        axis_line_width: float, label_font_size: float, x_min: float, y_min: float, x_max: float,
+                        y_max: float, plot_title: str):
+    fig = plt.figure(num=None, figsize=(10, 8), facecolor='white', edgecolor='white', frameon=True, clear=True)
+    plt.title(plot_title, fontsize='xx-large')
+    ax = fig.gca()
+    ax.set_xlabel('Reaction coordinate', fontsize='xx-large')
+    ax.set_ylabel('Energy (eV)', fontsize='xx-large')
+    ax.tick_params(labelsize=label_font_size)
+    plt.axis((x_min, x_max, y_min, y_max))
+    plt.setp(ax.spines.values(), linewidth=axis_line_width)
+
+    line1 = ax.plot(points_x, [e[0] for e in energies])
+    plt.setp(line1, marker=line_1_marker, markersize=line_1_marker_size, color=line_1_color, linewidth=line_1_width,
+             linestyle=line_1_style, label='State 1')
+    line2 = ax.plot(points_x, [e[1] for e in energies])
+    plt.setp(line2, marker=line_2_marker, markersize=line_2_marker_size, color=line_2_color, linewidth=line_2_width,
+             linestyle=line_2_style, label='State 2')
+
+    ax.legend(loc='center right', fontsize='large')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    plt.show()
+
+
+def calculate_profile(energies: list[list], lower_line: int):
+    mingap = float('inf')
+    ereorg = 0
+    delta_g = float('inf')
+
+    for i, energy in enumerate(energies):
+        gap = energy[1] - energy[0]
+        mingap = gap if gap < mingap else mingap
+        if energy[0] * energy[1] == 0 and gap > ereorg:
+            ereorg = gap
+        if i == 0 or i == len(energies) - 1:
+            continue
+        if energies[i - 1][lower_line] > energy[lower_line] > 0 and \
+                energies[i + 1][lower_line] > energy[lower_line] and \
+                energy[lower_line] < delta_g:
+            delta_g = energy[lower_line]
+
+    if delta_g == float('inf'):
+        border_values = [energies[i][lower_line] for i in (0, -1) if energies[i][lower_line] > 0]
+        if border_values:
+            delta_g = min(border_values)
+        else:
+            delta_g = 0
+
+    return ereorg, mingap, delta_g
+
+
+def energy_profile(folder_path: str, line_1_style: str, line_2_style: str, line_1_width: float, line_2_width: float,
+                   line_1_color: str, line_2_color: str, line_1_marker: str, line_2_marker: str,
+                   line_1_marker_size: int, line_2_marker_size: int, axis_line_width: float, label_font_size: float,
+                   x_min: float, y_min: float, x_max: float, y_max: float, plot_title: str):
+    """
+
+    :param folder_path:
+    :param line_1_style:
+    :param line_2_style:
+    :param line_1_width:
+    :param line_2_width:
+    :param line_1_color:
+    :param line_2_color:
+    :param line_1_marker:
+    :param line_2_marker:
+    :param line_1_marker_size:
+    :param line_2_marker_size:
+    :param axis_line_width:
+    :param label_font_size:
+    :param x_min:
+    :param y_min:
+    :param x_max:
+    :param y_max:
+    :param plot_title:
+    :return:
+    """
+    files_list = glob(os.path.join(folder_path, '*.out'))
+
+    # Get x-coordinate for all energy values
+    points_x = [filepath.rsplit('.', maxsplit=2)[-2] for filepath in files_list]
+    points_x = [int(x) / 10 ** max(len(p) - 1 for p in points_x) for x in points_x]
+
+    energies = []
+    min_energy = float('inf')   # Min state energy will be considered as zero
+
+    lower_line = 0  # 0 if state_1 line is lower, 1 - if state_2
+
+    # Read input data
+    for filepath in files_list:
+        with open(filepath, encoding='utf8') as f:
+            for line in f:
+                if '*** XMC-QDPT2 ENERGIES ***' in line:
+                    for _ in range(2):
+                        f.readline()
+                    state_1 = float(f.readline().strip().split()[-1])
+                    state_2 = float(f.readline().strip().split()[-1])
+
+                    lower_line = int(state_2 < state_1)  # Determine, if state_2 is lower than state_1
+
+                    if [state_1, state_2][lower_line] < min_energy:
+                        min_energy = [state_1, state_2][lower_line]
+
+                    energies.append([state_1, state_2])
+                    break
+
+    # Recalculate state energies from Daltons to Ev
+    energies = [[(e - min_energy) * COEF_DALTON_TO_EV for e in state] for state in energies]
+
+    ereorg, mingap, delta_g = calculate_profile(energies, lower_line)
+
+    plot_energy_profile(energies, points_x, line_1_style, line_2_style, line_1_width, line_2_width, line_1_color,
+                        line_2_color, line_1_marker, line_2_marker, line_1_marker_size, line_2_marker_size,
+                        axis_line_width, label_font_size, x_min, y_min, x_max, y_max, plot_title)
+
+    return ereorg, mingap, delta_g
+
+
+def main(folder_path: str, line_1_style: str, line_2_style: str, line_1_width: float, line_2_width: float,
+         line_1_color: str, line_2_color: str, line_1_marker: str, line_2_marker: str, line_1_marker_size: int,
+         line_2_marker_size: int, axis_line_width: float, label_font_size: float, x_min: float, y_min: float,
+         x_max: float, y_max: float, plot_title: str):
+    if not os.path.isdir(folder_path):
+        raise ValueError(f"{folder_path} is not a correct folder path")
+
+    results = energy_profile(folder_path, line_1_style, line_2_style, line_1_width, line_2_width, line_1_color,
+                             line_2_color, line_1_marker, line_2_marker, line_1_marker_size, line_2_marker_size,
+                             axis_line_width, label_font_size, x_min, y_min, x_max, y_max, plot_title)
+    return results
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--folder_path')
+    parser.add_argument('--line_1_style', choices=['-', '--', '-.', '..'], default='-')
+    parser.add_argument('--line_2_style', choices=['-', '--', '-.', '..'], default='-')
+    parser.add_argument('--line_1_width', type=float, default=1.0)
+    parser.add_argument('--line_2_width', type=float, default=1.0)
+    parser.add_argument('--line_1_color',
+                        choices=["orange", "blue", "green", "red", "cyan", "magenta", "yellow", "black"],
+                        default='blue')
+    parser.add_argument('--line_2_color',
+                        choices=["orange", "blue", "green", "red", "cyan", "magenta", "yellow", "black"],
+                        default='orange')
+    parser.add_argument('--line_1_marker', choices=[".", "o", "v", "^", "s", "+", "x", "D", "d", "_"], default='.')
+    parser.add_argument('--line_2_marker', choices=[".", "o", "v", "^", "s", "+", "x", "D", "d", "_"], default='.')
+    parser.add_argument('--line_1_marker_size', choices=list(range(11)), default=2)
+    parser.add_argument('--line_2_marker_size', choices=list(range(11)), default=2)
+    parser.add_argument('--axis_line_width', type=float, default=1.0)
+    parser.add_argument('--label_font_size', type=float, default=10.0)
+    parser.add_argument('--x_min', type=float, default=0.0)
+    parser.add_argument('--y_min', type=float, default=0.0)
+    parser.add_argument('--x_max', type=float, default=1.0)
+    parser.add_argument('--y_max', type=float, default=2.0)
+    parser.add_argument('--plot_title', default='Energy profile')
+
+    args = parser.parse_args()
+    main(**vars(args))
