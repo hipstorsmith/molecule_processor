@@ -492,8 +492,7 @@ def write_z_matrix(file_path: AnyStr, title: str, atoms_list: List[Atom], int_fo
                     f"  {idx.rjust(int_format)}," for idx in re.sub(r"[a-zA-Z]", "", var).split("_")) + "\n")
         f.write(" $END \n")
 
-
-def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
+def run_interpolation(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
     # read original xyz files without header
     with open(xyz_file_init, encoding='utf8') as f:
         xyz_init_coord = f.readlines()
@@ -550,6 +549,9 @@ def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
                        column_widths=column_widths,
                        coord_var_name='interpolation_points',
                        point_idx=i)
+
+def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
+    run_interpolation(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points)
 
 
 if __name__ == '__main__':

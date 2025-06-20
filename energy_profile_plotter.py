@@ -10,7 +10,7 @@ def plot_energy_profile(energies: list[list], points_x: list[float], line_1_styl
                         line_1_width: float, line_2_width: float, line_1_color: str, line_2_color: str,
                         line_1_marker: str, line_2_marker: str, line_1_marker_size: int, line_2_marker_size: int,
                         axis_line_width: float, label_font_size: float, x_min: float, y_min: float, x_max: float,
-                        y_max: float, plot_title: str):
+                        y_max: float, plot_title: str, fig=None, canvas=None):
     """
     Read input files from folder, calculate ereorg, mingap and DeltaG and build an energies plot on both states
     :param energies: list of energies. Each element is a list of two float energy values in two states
@@ -32,10 +32,15 @@ def plot_energy_profile(energies: list[list], points_x: list[float], line_1_styl
     :param x_max: max x coordinate on a graph
     :param y_max: max y coordinate on a graph
     :param plot_title:
+    :param fig: if set - draw the plot there
+    :param canvas: if set - draw the plot there
     :return: ereorg, mingap, delta_g (float, float, float)
     """
 
-    fig = plt.figure(num=None, figsize=(10, 8), facecolor='white', edgecolor='white', frameon=True, clear=True)
+    if not fig:
+        fig = plt.figure(num=None, figsize=(10, 8), facecolor='white', edgecolor='white', frameon=True, clear=True)
+    else:
+        fig.clear()
     plt.title(plot_title, fontsize='xx-large')
     ax = fig.gca()
     ax.set_xlabel('Reaction coordinate', fontsize='xx-large')
@@ -55,7 +60,10 @@ def plot_energy_profile(energies: list[list], points_x: list[float], line_1_styl
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
-    plt.show()
+    if canvas:
+        canvas.draw()
+    else:
+        plt.show()
 
 
 def calculate_profile(energies: list[list], line_order: list[int]):
@@ -102,7 +110,7 @@ def calculate_profile(energies: list[list], line_order: list[int]):
 def energy_profile(folder_path: str, line_1_style: str, line_2_style: str, line_1_width: float, line_2_width: float,
                    line_1_color: str, line_2_color: str, line_1_marker: str, line_2_marker: str,
                    line_1_marker_size: int, line_2_marker_size: int, axis_line_width: float, label_font_size: float,
-                   x_min: float, y_min: float, x_max: float, y_max: float, plot_title: str):
+                   x_min: float, y_min: float, x_max: float, y_max: float, plot_title: str, fig=None, canvas=None):
     """
     Read input files from folder, calculate ereorg, mingap and DeltaG and build an energies plot on both states
     :param folder_path: folder with .out files
@@ -123,10 +131,13 @@ def energy_profile(folder_path: str, line_1_style: str, line_2_style: str, line_
     :param x_max: max x coordinate on a graph
     :param y_max: max y coordinate on a graph
     :param plot_title:
+    :param fig: if set - draw the plot there
+    :param canvas: if set - draw the plot there
     :return: ereorg, mingap, delta_g (float, float, float)
     """
 
     files_list = glob(os.path.join(folder_path, '*.out'))
+    assert files_list, "Folder doesn't contain any .out files"
 
     # Get x-coordinate for all energy values
     points_x = [filepath.rsplit('.', maxsplit=2)[-2] for filepath in files_list]
@@ -164,7 +175,7 @@ def energy_profile(folder_path: str, line_1_style: str, line_2_style: str, line_
 
     plot_energy_profile(energies, points_x, line_1_style, line_2_style, line_1_width, line_2_width, line_1_color,
                         line_2_color, line_1_marker, line_2_marker, line_1_marker_size, line_2_marker_size,
-                        axis_line_width, label_font_size, x_min, y_min, x_max, y_max, plot_title)
+                        axis_line_width, label_font_size, x_min, y_min, x_max, y_max, plot_title, fig, canvas)
 
     return ereorg, mingap, delta_g
 
