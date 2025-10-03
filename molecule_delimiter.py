@@ -4,7 +4,6 @@ import os
 import numpy as np
 import networkx as nx
 from scipy.spatial import cKDTree, distance_matrix
-from scipy.optimize import linear_sum_assignment
 from collections import Counter
 
 
@@ -60,22 +59,16 @@ class Dimer(Molecule):
             number of atoms of each type
         distance_signature:
             pairwise distances between atoms
-        distance_fingerprint:
-            sorted list of pairwise distances between atoms for quick comparison
         centered_coords:
             list of translated to (0, 0, 0) centroid atom coordinates
-        atom_indices:
-            dict of atom indices corresponding to each atom
     """
 
     def __init__(self, monomer_1: Monomer, monomer_2: Monomer):
         super().__init__()
         self.atoms = sorted(monomer_1.atoms + monomer_2.atoms, key=lambda a: a.idx)
-        self.atom_names = np.array([a.name for a in self.atoms], dtype=object)
         self.type_counts = Counter(atom.name for atom in self.atoms)
-        self.distance_signature = np.sort(distance_matrix(self.centered_coords, self.centered_coords), axis=1)
-        self.distance_fingerprint = np.sort(self.distance_signature.flatten())
-        self.monomer_labels = np.array([0 if a in monomer_1.atoms else 1 for a in self.atoms], dtype=np.int8)
+        self.distance_signature = np.sort(
+            np.sort(distance_matrix(self.centered_coords, self.centered_coords), axis=1), axis=0)
 
     @property
     def centered_coords(self) -> np.ndarray:
@@ -86,17 +79,6 @@ class Dimer(Molecule):
         coord = np.vstack([atom.coord for atom in self.atoms])
         centroid = np.mean(coord, axis=0)
         return coord - centroid
-
-    @property
-    def atom_indices(self):
-        """
-        Dict of atom indices corresponding to each atom
-        """
-
-        groups: dict[str, list[int]] = {}
-        for i, atom in enumerate(self.atoms):
-            groups.setdefault(atom.name, []).append(i)
-        return {k: np.array(v, dtype=int) for k, v in groups.items()}
 
 
 def build_cartesian_graph(input_file: str, max_bond_length: float) -> nx.Graph:
@@ -183,147 +165,7 @@ def monomers_to_dimers(monomers: list[Monomer], contact_distance: float) -> list
             # Don't add twin pairs
             monomer_pair_idxs.add(tuple(sorted([monomer_i_idx, monomer_j_idx])))
 
-    return [Dimer(monomers[i], monomers[j]) for (i, j) in sorted(monomer_pair_idxs)]
-
-
-def kabsch(mat_a: np.ndarray, mat_b: np.ndarray) -> np.ndarray:
-    """
-    Kabsch algorithm. Compute the optimal rotation (without scaling, translation and reflection) matrix that aligns two
-    centered matrices mat_a[n, 3] to mat_b[n, 3] using least-squares method.
-    :param mat_a:
-    :param mat_b:
-    :return: reflection matrix
-    """
-
-    # Cross-covariance matrix
-    covariance = mat_a.T @ mat_b
-
-    # SVD
-    u, s, vh = np.linalg.svd(covariance)
-    rotation = vh.T @ u.T
-
-    # Enforce a rotation without reflection
-    if np.linalg.det(rotation) < 0:
-        vh[-1, :] *= -1.0
-        rotation = vh.T @ u.T
-
-    return rotation
-
-
-def pairwise_sq_distance(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """
-    Calculate L2-squared norm: (a - b)**2
-    :param a:
-    :param b:
-    :return:
-
-    """
-    a_sq = np.sum(a * a, axis=1, keepdims=True)
-    b_sq = np.sum(b * b, axis=1, keepdims=True).T
-    a_b = a @ b.T
-
-    # Max to zero to avoid float errors
-    return np.maximum(a_sq + b_sq - 2.0 * a_b, 0.0)
-
-
-def rmsd_with_perm(mat_a: np.ndarray, mat_b: np.ndarray, perm: np.ndarray) -> tuple[float, np.ndarray]:
-    """
-    Given centered coordinates mat_a[n, 3] and mat_b[n, 3] and a mapping permutation matrix (A->B), reorder mat_a to
-    the order of mat_b and compute optimal rotation (via Kabsch algorithm) and RMSD (root-mean-square distance)
-    :param mat_a:
-    :param mat_b:
-    :param perm: permutation for mat_a indices
-    :return: (rmsd, rotation)
-    """
-
-    mat_a_ordered = np.empty_like(mat_a)
-    mat_a_ordered[perm] = mat_a  # place atom i of mat_b into row perm[i] to match mat_q's row ordering
-
-    # calculate rotation
-    rotation = kabsch(mat_a_ordered, mat_b)
-
-    # rotate
-    mat_a_rotated = mat_a_ordered @ rotation
-
-    # calculate rmsd
-    diff = mat_a_rotated - mat_b
-    rmsd = np.sqrt(np.mean(np.sum(diff * diff, axis=1)))
-    return rmsd, rotation
-
-
-def build_assignment_from_signatures(distance_signature_a: np.ndarray, distance_signature_b: np.ndarray,
-                                     atom_indices_a: dict[str, np.ndarray], atom_indices_b: dict[str, np.ndarray]
-                                     ) -> np.ndarray:
-    """
-    Build an A->B index mapping per atom name using Hungarian assignment on distance signatures.
-    :param distance_signature_a:
-        first matrix of pairwise distances between each pair of atoms
-    :param distance_signature_b:
-        second matrix of pairwise distances between each pair of atoms
-    :param atom_indices_a:
-        first dict of atom indices corresponding to each atom
-    :param atom_indices_b:
-        second dict of atom indices corresponding to each atom
-    :return:
-        array of length distance_signature_a.shape[0] where perm[i] is the matched index in B for atom i in A.
-    """
-
-    assert set(atom_indices_a) == set(atom_indices_b)
-
-    perm = np.empty(distance_signature_a.shape[0], dtype=int)
-
-    for name in atom_indices_a.keys():
-        idx_a = atom_indices_a[name]  # indices in A for this atom type
-        idx_b = atom_indices_b[name]  # indices in B for this atom type
-        signature_name_a = distance_signature_a[idx_a]
-        signature_name_b = distance_signature_b[idx_b]
-
-        # optimization cost is euclidian (L2) distance between signature rows
-        cost_sq = pairwise_sq_distance(signature_name_a, signature_name_b)
-        row_ind, col_ind = linear_sum_assignment(cost_sq)
-        # permute
-        perm[idx_a[row_ind]] = idx_b[col_ind]
-
-    return perm
-
-
-def refine_rotate_assignment(centered_coords_a: np.ndarray, centered_coords_b: np.ndarray,
-                             atom_indices_a: dict[str, np.ndarray], atom_indices_b: dict[str, np.ndarray],
-                             rotation: np.ndarray) -> np.ndarray:
-    """
-    Rotate matrix A and rebuild an A->B index mapping per atom name using Hungarian assignment on centered coordinates.
-    :param centered_coords_a:
-        first list of centered atom coordinates
-    :param centered_coords_b:
-        second list of centered atom coordinates
-    :param atom_indices_a:
-        first dict of atom indices corresponding to each atom
-    :param atom_indices_b:
-        second dict of atom indices corresponding to each atom
-    :param rotation:
-        rotation matrix for matrix a
-    :return:
-        array of length centered_coords_a.shape[0] where perm[i] is the matched index in B for atom i in A.
-    """
-
-    # rotate matrix A
-    centered_coords_a_rot = centered_coords_a @ rotation
-    perm = np.empty(centered_coords_a.shape[0], dtype=int)
-
-    for name in atom_indices_a.keys():
-        idx_a = atom_indices_a[name]  # indices in A for this atom type
-        idx_b = atom_indices_b[name]  # indices in B for this atom type
-        coord_name_a = centered_coords_a_rot[idx_a]
-        coord_name_b = centered_coords_b[idx_b]
-
-        # optimization cost is euclidian (L2) distance between two sets of coordinates
-        cost_sq = pairwise_sq_distance(coord_name_a, coord_name_b)
-        row_ind, col_ind = linear_sum_assignment(cost_sq)
-
-        # permute
-        perm[idx_a[row_ind]] = idx_b[col_ind]
-
-    return perm
+    return [Dimer(monomers[i], monomers[j]) for (i, j) in monomer_pair_idxs]
 
 
 def deduplicate_dimers(dimers: list[Dimer], eps=10 ** -6) -> list[Dimer]:
@@ -339,40 +181,18 @@ def deduplicate_dimers(dimers: list[Dimer], eps=10 ** -6) -> list[Dimer]:
 
     unique_dimers: list[Dimer] = []
 
-    for i, candidate in enumerate(dimers):
+    for candidate in dimers:
         is_duplicate = False
-        if candidate.centered_coords.shape[0] <= 2:
-            # Drop this dimer, there is clearly something wrong with it
-            continue
-        for j, dimer in enumerate(unique_dimers):
+        for dimer in unique_dimers:
             # Checking amounts of atoms of different types. Not matching - not a duplicate
             if candidate.type_counts != dimer.type_counts:
                 continue
             # If amount of atoms are matching - total amount of atoms is equal. Pairwise distances can be compared
-            # Checking if sorted lists of pairwise distances are close. If they are not - not a duplicate
-            if not np.allclose(candidate.distance_fingerprint, dimer.distance_fingerprint, atol=eps):
+            # Checking if matrices of pairwise distances are close. If they are not - not a duplicate
+
+            if not np.allclose(candidate.distance_signature, dimer.distance_signature, atol=eps):
                 continue
-
-            # If distance fingerprints are matching - create an assignment using Hungarian algorithm matching
-            init_permutation = build_assignment_from_signatures(candidate.distance_signature, dimer.distance_signature,
-                                                                candidate.atom_indices, dimer.atom_indices)
-            # Calculate current distance and rotation between candidate and current unique dimer
-            init_rmsd, init_rotation = rmsd_with_perm(candidate.centered_coords, dimer.centered_coords,
-                                                      init_permutation)
-            if init_rmsd < eps:
-                is_duplicate = True
-                break
-
-            # Rotate and recalculate permutation
-            refined_permutation = refine_rotate_assignment(candidate.centered_coords, dimer.centered_coords,
-                                                           candidate.atom_indices, dimer.atom_indices, init_rotation)
-            # Calculate distance with new permutation
-            refined_rmsd, _ = rmsd_with_perm(candidate.centered_coords, dimer.centered_coords, refined_permutation)
-            if refined_rmsd < eps:
-                is_duplicate = True
-                break
-
-            pass
+            is_duplicate = True
 
         if not is_duplicate:
             unique_dimers.append(candidate)
