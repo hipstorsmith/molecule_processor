@@ -2,7 +2,6 @@ import sys
 import os
 from markdown import markdown
 from glob import glob
-from functools import partial
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QUrl
@@ -81,6 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.delimiterXyzFileButton.clicked.connect(
             lambda: self._get_file(self.delimiterXyzFileEdit, "XYZ files (*.xyz)"))
         self.delimiterOutputFolderButton.clicked.connect(lambda: self._get_dir(self.delimiterOutputFolderEdit))
+        self.delimiterMergeToDimers.stateChanged.connect(self._enable_dimer_options)
         self.delimiterSplitButton.clicked.connect(self._run_molecules_delimiter)
 
         self.plotRunEditorButton.clicked.connect(self._open_plot_window)
@@ -150,6 +150,15 @@ class MainWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.information(self, "Done",
                                               f"{func.__name__} completed successfully.")
 
+    def _enable_dimer_options(self):
+        if self.delimiterMergeToDimers.isChecked():
+            self.delimiterDropDuplicates.setEnabled(True)
+            self.delimiterContactDistance.setEnabled(True)
+        else:
+            self.delimiterDropDuplicates.setDisabled(True)
+            self.delimiterContactDistance.setDisabled(True)
+
+
     def _run_interpolation(self):
         kwargs = {
             'xyz_file_init': self.interpolationInitialFileEdit.text(),
@@ -188,7 +197,10 @@ class MainWindow(QtWidgets.QMainWindow):
             'input_file': self.delimiterXyzFileEdit.text(),
             'output_folder': self.delimiterOutputFolderEdit.text(),
             'min_atoms_per_molecule': self.delimiterMinAtomsBox.value(),
-            'max_bond_length': self.delimiterBondAtomsBox.value()
+            'max_bond_length': self.delimiterBondAtomsBox.value(),
+            'merge_to_dimers': self.delimiterMergeToDimers.isChecked(),
+            'contact_distance': self.delimiterContactDistance.value(),
+            'drop_duplicates': self.delimiterDropDuplicates.isChecked()
         }
         self._safe_call(molecules_delimiter, **kwargs)
 
@@ -281,10 +293,3 @@ class HelpDialog(QtWidgets.QDialog):
         # 2) Convert to HTML and display
         html = markdown(md_text, extensions=['fenced_code', 'tables'])
         self.helpTextBrowser.setHtml(html)
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
