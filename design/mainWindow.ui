@@ -6,9 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>633</width>
-    <height>805</height>
+    <width>650</width>
+    <height>810</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>650</width>
+    <height>810</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>650</width>
+    <height>810</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Molecule Processor</string>
@@ -18,86 +30,13 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>10</y>
-      <width>601</width>
-      <height>741</height>
+      <y>0</y>
+      <width>631</width>
+      <height>761</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="24" column="0">
-      <widget class="QCheckBox" name="delimiterMergeToDimers">
-       <property name="text">
-        <string>Merge monomers to dimers</string>
-       </property>
-      </widget>
-     </item>
-     <item row="22" column="0">
-      <widget class="QLabel" name="label_24">
-       <property name="text">
-        <string>Minimum Atoms Per Molecule</string>
-       </property>
-      </widget>
-     </item>
-     <item row="30" column="0">
-      <widget class="QPushButton" name="plotRunEditorButton">
-       <property name="text">
-        <string>Plot Editor</string>
-       </property>
-      </widget>
-     </item>
-     <item row="20" column="2">
-      <widget class="QToolButton" name="delimiterXyzFileButton">
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
-     </item>
-     <item row="21" column="2">
-      <widget class="QToolButton" name="delimiterOutputFolderButton">
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
-     </item>
-     <item row="22" column="1">
-      <widget class="QSpinBox" name="delimiterMinAtomsBox">
-       <property name="value">
-        <number>10</number>
-       </property>
-      </widget>
-     </item>
-     <item row="23" column="0">
-      <widget class="QLabel" name="label_23">
-       <property name="text">
-        <string>Molecular Bond Limit</string>
-       </property>
-      </widget>
-     </item>
-     <item row="23" column="1">
-      <widget class="QSpinBox" name="delimiterBondAtomsBox">
-       <property name="value">
-        <number>2</number>
-       </property>
-      </widget>
-     </item>
-     <item row="28" column="0" colspan="3">
-      <widget class="Line" name="line">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="29" column="0" colspan="3">
-      <widget class="QLabel" name="label_4">
-       <property name="text">
-        <string>Plot results</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="21" column="1">
+     <item row="2" column="2">
       <widget class="QLineEdit" name="delimiterOutputFolderEdit">
        <property name="enabled">
         <bool>true</bool>
@@ -107,21 +46,107 @@
        </property>
       </widget>
      </item>
-     <item row="27" column="0">
-      <widget class="QPushButton" name="delimiterSplitButton">
+     <item row="3" column="0" colspan="2">
+      <widget class="QLabel" name="label_24">
        <property name="text">
-        <string>Split</string>
+        <string>Minimum Atoms Per Molecule</string>
        </property>
       </widget>
      </item>
-     <item row="21" column="0">
+     <item row="4" column="2">
+      <widget class="QSpinBox" name="delimiterBondAtomsBox">
+       <property name="value">
+        <number>2</number>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0" colspan="2">
+      <widget class="QLabel" name="label_19">
+       <property name="text">
+        <string>Path to initial file (.xyz)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QLineEdit" name="delimiterXyzFileEdit">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0" colspan="2">
       <widget class="QLabel" name="label_14">
        <property name="text">
         <string>Path to output folder</string>
        </property>
       </widget>
      </item>
-     <item row="26" column="0">
+     <item row="3" column="2">
+      <widget class="QSpinBox" name="delimiterMinAtomsBox">
+       <property name="value">
+        <number>10</number>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0" colspan="2">
+      <widget class="QLabel" name="label_23">
+       <property name="text">
+        <string>Molecular Bond Limit</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0" colspan="2">
+      <widget class="QCheckBox" name="delimiterMergeToDimers">
+       <property name="text">
+        <string>Merge monomers to dimers</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0" colspan="2">
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>Contact distance</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0" colspan="4">
+      <widget class="QLabel" name="label_18">
+       <property name="text">
+        <string>Molecular Delimiter</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <widget class="QToolButton" name="delimiterXyzFileButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <widget class="QToolButton" name="delimiterOutputFolderButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="QDoubleSpinBox" name="delimiterContactDistance">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="value">
+        <double>4.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0" colspan="2">
       <widget class="QCheckBox" name="delimiterDropDuplicates">
        <property name="enabled">
         <bool>false</bool>
@@ -134,55 +159,14 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0" colspan="3">
-      <widget class="QLabel" name="label_3">
+     <item row="8" column="0" colspan="2">
+      <widget class="QPushButton" name="delimiterSplitButton">
        <property name="text">
-        <string>Interpolator</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
+        <string>Split</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_10">
-       <property name="text">
-        <string>Path to initial file (.xyz)</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QToolButton" name="interpolationInitialFileButton">
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_12">
-       <property name="text">
-        <string>Path to output folder</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0" colspan="3">
-      <widget class="Line" name="line_4">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="1">
-      <widget class="QLineEdit" name="vecInputFileEdit">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="0" colspan="3">
+     <item row="18" column="0" colspan="4">
       <widget class="QLabel" name="label">
        <property name="text">
         <string>Change $VEC group</string>
@@ -192,52 +176,7 @@
        </property>
       </widget>
      </item>
-     <item row="8" column="0">
-      <widget class="QLabel" name="label_5">
-       <property name="text">
-        <string>Path to file (.inp) or folder</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="2">
-      <widget class="QToolButton" name="vecInputFileButton">
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_11">
-       <property name="text">
-        <string>Path to transformed file (.xyz)</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QLineEdit" name="interpolationTransformedFileEdit">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="QToolButton" name="interpolationOutputFolderButton">
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QPushButton" name="interpolatorOpenFolderButton">
-       <property name="text">
-        <string>Open output folder</string>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="1">
+     <item row="20" column="2">
       <widget class="QLineEdit" name="vecVecFileEdit">
        <property name="enabled">
         <bool>true</bool>
@@ -247,65 +186,24 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="2">
-      <widget class="QToolButton" name="interpolationTransformedFileButton">
+     <item row="21" column="3">
+      <widget class="QToolButton" name="vecOutputFolderButton">
        <property name="text">
         <string>...</string>
        </property>
       </widget>
      </item>
-     <item row="9" column="0">
-      <widget class="QLabel" name="label_6">
+     <item row="10" column="0" colspan="4">
+      <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Path to VEC file</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QSpinBox" name="interpolationStepsAmountBox">
-       <property name="maximum">
-        <number>99999</number>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QLineEdit" name="interpolationInitialFileEdit">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QLineEdit" name="interpolationOutputFolderEdit">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label_13">
-       <property name="text">
-        <string>Amount of steps</string>
+        <string>Interpolator</string>
        </property>
        <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        <set>Qt::AlignCenter</set>
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
-      <widget class="QPushButton" name="interpolationRunButton">
-       <property name="text">
-        <string>Interpolate</string>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="1">
+     <item row="21" column="2">
       <widget class="QLineEdit" name="vecOutputFolderEdit">
        <property name="enabled">
         <bool>true</bool>
@@ -315,14 +213,68 @@
        </property>
       </widget>
      </item>
-     <item row="16" column="2">
-      <widget class="QToolButton" name="methodOutputFolderButton">
-       <property name="text">
-        <string>...</string>
+     <item row="11" column="2">
+      <widget class="QLineEdit" name="interpolationInitialFileEdit">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="13" column="0" colspan="3">
+     <item row="13" column="2">
+      <widget class="QLineEdit" name="interpolationOutputFolderEdit">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="2">
+      <widget class="QLineEdit" name="interpolationTransformedFileEdit">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="19" column="0" colspan="2">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Path to file (.inp) or folder</string>
+       </property>
+      </widget>
+     </item>
+     <item row="19" column="2">
+      <widget class="QLineEdit" name="vecInputFileEdit">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="22" column="0" colspan="2">
+      <widget class="QPushButton" name="vecChangeVecButton">
+       <property name="text">
+        <string>Change $VEC</string>
+       </property>
+      </widget>
+     </item>
+     <item row="23" column="0" colspan="4">
+      <widget class="Line" name="line_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="24" column="0" colspan="4">
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>Change Method group (header)</string>
@@ -332,38 +284,129 @@
        </property>
       </widget>
      </item>
-     <item row="15" column="2">
-      <widget class="QToolButton" name="methodMethodFileButton">
+     <item row="11" column="3">
+      <widget class="QToolButton" name="interpolationInitialFileButton">
        <property name="text">
         <string>...</string>
        </property>
       </widget>
      </item>
-     <item row="18" column="0" colspan="3">
+     <item row="14" column="0" colspan="2">
+      <widget class="QLabel" name="label_13">
+       <property name="text">
+        <string>Amount of steps</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="3">
+      <widget class="QToolButton" name="interpolationTransformedFileButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="0" colspan="4">
       <widget class="Line" name="line_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
       </widget>
      </item>
-     <item row="20" column="1">
-      <widget class="QLineEdit" name="delimiterXyzFileEdit">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
+     <item row="13" column="0" colspan="2">
+      <widget class="QLabel" name="label_12">
+       <property name="text">
+        <string>Path to output folder</string>
        </property>
       </widget>
      </item>
-     <item row="12" column="0" colspan="3">
-      <widget class="Line" name="line_3">
+     <item row="17" column="0" colspan="4">
+      <widget class="Line" name="line_4">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
       </widget>
      </item>
-     <item row="14" column="1">
+     <item row="19" column="3">
+      <widget class="QToolButton" name="vecInputFileButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="3">
+      <widget class="QToolButton" name="interpolationOutputFolderButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="2">
+      <widget class="QSpinBox" name="interpolationStepsAmountBox">
+       <property name="maximum">
+        <number>99999</number>
+       </property>
+      </widget>
+     </item>
+     <item row="20" column="0" colspan="2">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Path to VEC file</string>
+       </property>
+      </widget>
+     </item>
+     <item row="20" column="3">
+      <widget class="QToolButton" name="vecVecFileButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="21" column="0" colspan="2">
+      <widget class="QLabel" name="label_15">
+       <property name="text">
+        <string>Path to output folder</string>
+       </property>
+      </widget>
+     </item>
+     <item row="25" column="0" colspan="2">
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>Path to file (.inp) or folder</string>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="0" colspan="2">
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>Path to transformed file (.xyz)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="0" colspan="2">
+      <widget class="QPushButton" name="interpolatorOpenFolderButton">
+       <property name="text">
+        <string>Open output folder</string>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="0" colspan="2">
+      <widget class="QLabel" name="label_10">
+       <property name="text">
+        <string>Path to initial file (.xyz)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="28" column="0" rowspan="2" colspan="2">
+      <widget class="QPushButton" name="methodChangeMethodButton">
+       <property name="text">
+        <string>Change Method</string>
+       </property>
+      </widget>
+     </item>
+     <item row="25" column="2">
       <widget class="QLineEdit" name="methodInputFileEdit">
        <property name="enabled">
         <bool>true</bool>
@@ -373,7 +416,7 @@
        </property>
       </widget>
      </item>
-     <item row="15" column="1">
+     <item row="26" column="2">
       <widget class="QLineEdit" name="methodMethodFileEdit">
        <property name="enabled">
         <bool>true</bool>
@@ -383,21 +426,59 @@
        </property>
       </widget>
      </item>
-     <item row="9" column="2">
-      <widget class="QToolButton" name="vecVecFileButton">
+     <item row="31" column="0" colspan="2">
+      <widget class="QPushButton" name="plotRunEditorButton">
+       <property name="text">
+        <string>Plot Editor</string>
+       </property>
+      </widget>
+     </item>
+     <item row="25" column="3">
+      <widget class="QToolButton" name="methodInputFileButton">
        <property name="text">
         <string>...</string>
        </property>
       </widget>
      </item>
-     <item row="16" column="0">
+     <item row="27" column="3">
+      <widget class="QToolButton" name="methodOutputFolderButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="27" column="0" colspan="2">
       <widget class="QLabel" name="label_16">
        <property name="text">
         <string>Path to output folder</string>
        </property>
       </widget>
      </item>
-     <item row="16" column="1">
+     <item row="26" column="3">
+      <widget class="QToolButton" name="methodMethodFileButton">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+     <item row="30" column="0" colspan="4">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Plot results</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="26" column="0" colspan="2">
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>Path to new method file</string>
+       </property>
+      </widget>
+     </item>
+     <item row="27" column="2">
       <widget class="QLineEdit" name="methodOutputFolderEdit">
        <property name="enabled">
         <bool>true</bool>
@@ -407,86 +488,23 @@
        </property>
       </widget>
      </item>
-     <item row="19" column="0" colspan="3">
-      <widget class="QLabel" name="label_18">
-       <property name="text">
-        <string>Molecular Delimiter</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
+     <item row="29" column="1" colspan="3">
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
        </property>
       </widget>
      </item>
-     <item row="10" column="0">
-      <widget class="QLabel" name="label_15">
+     <item row="16" column="0" colspan="2">
+      <widget class="QPushButton" name="interpolationRunButton">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="text">
-        <string>Path to output folder</string>
-       </property>
-      </widget>
-     </item>
-     <item row="11" column="0">
-      <widget class="QPushButton" name="vecChangeVecButton">
-       <property name="text">
-        <string>Change $VEC</string>
-       </property>
-      </widget>
-     </item>
-     <item row="14" column="0">
-      <widget class="QLabel" name="label_7">
-       <property name="text">
-        <string>Path to file (.inp) or folder</string>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="2">
-      <widget class="QToolButton" name="vecOutputFolderButton">
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
-     </item>
-     <item row="14" column="2">
-      <widget class="QToolButton" name="methodInputFileButton">
-       <property name="text">
-        <string>...</string>
-       </property>
-      </widget>
-     </item>
-     <item row="15" column="0">
-      <widget class="QLabel" name="label_8">
-       <property name="text">
-        <string>Path to new method file</string>
-       </property>
-      </widget>
-     </item>
-     <item row="17" column="0">
-      <widget class="QPushButton" name="methodChangeMethodButton">
-       <property name="text">
-        <string>Change Method</string>
-       </property>
-      </widget>
-     </item>
-     <item row="20" column="0">
-      <widget class="QLabel" name="label_19">
-       <property name="text">
-        <string>Path to initial file (.xyz)</string>
-       </property>
-      </widget>
-     </item>
-     <item row="25" column="0">
-      <widget class="QLabel" name="label_9">
-       <property name="text">
-        <string>Contact distance</string>
-       </property>
-      </widget>
-     </item>
-     <item row="25" column="1">
-      <widget class="QDoubleSpinBox" name="delimiterContactDistance">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="value">
-        <double>4.000000000000000</double>
+        <string>Interpolate</string>
        </property>
       </widget>
      </item>
@@ -499,7 +517,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>633</width>
+     <width>650</width>
      <height>22</height>
     </rect>
    </property>
