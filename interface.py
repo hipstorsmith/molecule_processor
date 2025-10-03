@@ -16,41 +16,20 @@ from molecule_delimiter import molecules_delimiter
 from energy_profile_plotter import energy_profile
 
 
-class Window(QtWidgets.QDialog):
+def resource_path(*parts: str) -> str:
     """
-    Base class for inheritance only. Loads design file and sets up environment parameters
-    Also deprecates exit on Esc button
-
-    Parameters:
-    environment: class Environment - environment object
-    design_file: *.ui design file name
+    Build an absolute path to bundled resources that works both:
+    - in source checkout (runs from repo)
+    - in PyInstaller --onefile (resources extracted to sys._MEIPASS)
     """
-
-    def __init__(self, environment, design_file):
-        super().__init__()
-        uic.loadUi(design_file, self)
-        self.environment = environment
-        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
-        self.setWindowFlag(Qt.WindowCloseButtonHint, False)
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Escape:
-            event.ignore()
-        else:
-            super().keyPressEvent(event)
-
-    def closeEvent(self, event):
-        for window in self.environment.program_windows.values():
-            window.close()
-
-    def hideEvent(self, event):
-        self.hide()
+    base = getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))
+    return os.path.join(base, *parts)
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, design_file='design/mainWindow.ui'):
+    def __init__(self):
         super().__init__()
-        uic.loadUi(design_file, self)
+        uic.loadUi(resource_path('design', 'mainWindow.ui'), self)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
 
         # Wire buttons to their helpers
@@ -158,7 +137,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.delimiterDropDuplicates.setDisabled(True)
             self.delimiterContactDistance.setDisabled(True)
 
-
     def _run_interpolation(self):
         kwargs = {
             'xyz_file_init': self.interpolationInitialFileEdit.text(),
@@ -215,15 +193,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 class PlotWindow(QtWidgets.QMainWindow):
-    def __init__(self, parent=None, design_file='design/plotSettingsWindow.ui'):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi(design_file, self)
+        uic.loadUi(resource_path('design', 'plotSettingsWindow.ui'), self)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
 
         self._fig = Figure()
         self._canvas = FigureCanvas(self._fig)
 
-        margin = self.plotCanvasContainer.lineWidth + self.plotCanvasContainer.midLineWidth
+        margin = self.plotCanvasContainer.lineWidth() + self.plotCanvasContainer.midLineWidth()
 
         layout = QtWidgets.QVBoxLayout(self.plotCanvasContainer)
         layout.setContentsMargins(margin, margin, margin, margin)
@@ -243,8 +221,8 @@ class PlotWindow(QtWidgets.QMainWindow):
             line_edit.setText(path)
 
     def _build_plot(self):
-        #self._fig = Figure()
-        #self._canvas = FigureCanvas(self._fig)
+        # self._fig = Figure()
+        # self._canvas = FigureCanvas(self._fig)
 
         try:
             ereorg, mingap, delta_g = energy_profile(
@@ -279,7 +257,7 @@ class PlotWindow(QtWidgets.QMainWindow):
 class HelpDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        uic.loadUi('design/helpWindow.ui', self)
+        uic.loadUi(resource_path('design', 'helpWindow.ui'), self)
 
         # 1) Read the markdown file
         md_path = os.path.join(os.path.dirname(__file__), 'README.md')
