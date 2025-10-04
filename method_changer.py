@@ -20,7 +20,7 @@ def method_changer(input_file: str, method_file: str, output_file: str):
     if not output_lines[-1].endswith('\n'):
         output_lines[-1] += '\n'
 
-    # Read read input file after header ($DATA and $VEC groups)
+    # Read input file after header ($DATA and $VEC groups)
     data_found = False
     with open(input_file, encoding='utf8') as f:
         for line in f:

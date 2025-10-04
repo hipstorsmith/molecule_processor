@@ -221,11 +221,8 @@ class PlotWindow(QtWidgets.QMainWindow):
             line_edit.setText(path)
 
     def _build_plot(self):
-        # self._fig = Figure()
-        # self._canvas = FigureCanvas(self._fig)
-
         try:
-            ereorg, mingap, delta_g = energy_profile(
+            ereorg, mingap, delta_g, khop = energy_profile(
                 folder_path=self.qdptFilesEdit.text(),
                 line_1_style=self.line1StyleBox.currentText(),
                 line_2_style=self.line2StyleBox.currentText(),
@@ -244,12 +241,14 @@ class PlotWindow(QtWidgets.QMainWindow):
                 x_max=self.xMaxBox.value(),
                 y_max=self.yMaxBox.value(),
                 plot_title=self.plotTitleEdit.text(),
+                temperature=self.temperatureBox.value(),
                 fig=self._fig,
                 canvas=self._canvas
             )
-            self.ereorgEdit.setText(str(ereorg))
-            self.deltaGEdit.setText(str(delta_g))
-            self.energyGapEdit.setText(str(mingap))
+            self.ereorgEdit.setText(f"{ereorg:.5}")
+            self.deltaGEdit.setText(f"{delta_g:.5}")
+            self.energyGapEdit.setText(f"{mingap:.5}")
+            self.kHopEdit.setText(f"{khop:.3E}")
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error", str(e))
 

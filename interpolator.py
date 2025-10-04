@@ -9,9 +9,9 @@ from itertools import groupby, compress, permutations
 from operator import itemgetter
 
 RADIUS_TABLE = {atom.symbol: (atom.covalent_radius or 246) / 100 for atom in mendeleev.get_all_elements()}
-HEAD = """ $CONTRL RUNTYP=energy SCFTYP=RHF dfttyp=none
-  MAXIT=200 ICHARG=0 MULT=1 d5=.t. nzvar={nzvar}
-  exetyp=check coord=zmt
+HEAD = """$CONTRL RUNTYP=energy SCFTYP=MCSCF dfttyp=none
+  MAXIT=200 ICHARG={1,-1} MULT=2 d5=.t. nzvar={nzvar}
+  exetyp={check,run} coord={coord}
  $END
  $SYSTEM TIMLIM=3600000 MWORDS=350 $END
  $smp smppar=.t. load=0 call64=.t. $end
@@ -19,7 +19,23 @@ HEAD = """ $CONTRL RUNTYP=energy SCFTYP=RHF dfttyp=none
  $trans mptran=2 dirtrf=.t. aoints=dist altpar=.t. mode=112 $end 
  $BASIS  GBASIS=n31 ngauss=6 NDFUNC=1 NPFUNC=1 $END
  $SCF DIRSCF=.TRUE. SOSCF=.f. $END
-! $GUESS GUESS=moread $END  
+{!} $GUESS GUESS=moread norb={norb} $END
+ $DET NCORE={ncore} NACT=2 NELS={1,3} nstate=2 iroot=1 ITERMX=500 PURES=.t.             
+  wstate(1)=1.,1.                                                               
+  distci=64                                                                     
+ $END                                                                           
+ $ciinp castrf=.t. $end                                                         
+ $MCSCF method=dm2 cistep=aldet                                                 
+  SOSCF=.t.                                                                     
+  istate=1                                                                      
+  CASHFT=1.0 CASDII=0.01 MICIT=10                                               
+  maxit=40                                                                      
+ $END                                                                           
+ $rimp2 auxbas=def2-TZVP/C extfil=.t. rimode=2 $end                             
+ $XMCQDPT INORB=1 edshft=0.02 alttrf=.t. alttrf(1)=1,1,1,1                      
+  nstate=2 ri=.t.                                                               
+  wstate(1)=1,1,-0 avecoe(1)=1,1,-0 $end                                        
+ $mcqfit $end                                                                   
  $DATA
 {title}
 C1
@@ -213,10 +229,6 @@ class Atom:
         vec2 = getattr(other_2, attr_name) - getattr(other_1, attr_name)
 
         return np.degrees(np.arccos(np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))))
-
-    # @staticmethod
-    # def fix_dihedral(angle):
-    #    return angle + 360 if angle < 0 else angle #-90 > angle >= -180 else angle
 
     def dihedral(self, other_1: 'Atom', other_2: 'Atom', other_3: 'Atom', attr_name: str) -> float:
         """
@@ -470,8 +482,11 @@ def write_z_matrix(file_path: AnyStr, title: str, atoms_list: List[Atom], int_fo
     assert coord_var_name in ('init_proc_data_value', 'trans_proc_data_value', 'interpolation_points'), \
         (f"Invalid attribute name: '{coord_var_name}'. Must be 'init_proc_data_value', 'trans_proc_data_value' or"
          f" 'interpolation_points'")
+
+    # TODO: coord='unique' when conversion to xyz
+
     with open(file_path, 'w', encoding='utf8') as f:
-        f.write(HEAD.format(title=title, nzvar=3 * len(atoms_list) - 6))
+        f.write(HEAD.format(title=title, nzvar=3 * len(atoms_list) - 6, coord='zmt'))
         for atom in atoms_list:
             line = '  '.join(
                 f"{str(idx).ljust(int_format)}  {str(var).ljust(column_widths[i])}" for i, (idx, var) in
@@ -540,8 +555,6 @@ def run_interpolation(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
     for i in range(1, n_points):
         coord = str(i * 100 // (n_points - 1)).zfill(3)
         filename = os.path.splitext(os.path.basename(xyz_file_init))[0] + f'.{coord}.inp'
-        #filename = (f"{os.path.splitext(os.path.basename(xyz_file_init))[0]}_"
-        #            f"{os.path.splitext(os.path.basename(xyz_file_trans))[0]}_{i + 1}.inp")
         write_z_matrix(file_path=os.path.join(zmt_folder_out, filename),
                        title=title,
                        atoms_list=atoms_list,

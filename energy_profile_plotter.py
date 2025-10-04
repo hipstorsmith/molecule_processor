@@ -1,6 +1,8 @@
 import os
 import argparse
 import matplotlib.pyplot as plt
+import scipy.constants
+import math
 from glob import glob
 
 COEF_DALTON_TO_EV = 27.2114
@@ -41,7 +43,8 @@ def plot_energy_profile(energies: list[list], points_x: list[float], line_1_styl
         fig = plt.figure(num=None, figsize=(10, 8), facecolor='white', edgecolor='white', frameon=True, clear=True)
     else:
         fig.clear()
-    plt.title(plot_title, fontsize='xx-large')
+
+    # plt.title(plot_title, fontsize='xx-large')
     ax = fig.gca()
     ax.set_xlabel('Reaction coordinate', fontsize='xx-large')
     ax.set_ylabel('Energy (eV)', fontsize='xx-large')
@@ -66,12 +69,13 @@ def plot_energy_profile(energies: list[list], points_x: list[float], line_1_styl
         plt.show()
 
 
-def calculate_profile(energies: list[list], line_order: list[int]):
+def calculate_profile(energies: list[list], line_order: list[int], temperature: float):
     """
     Calculate mingap, ereorg and delta_g based on energy values in a list of states.
     :param energies: list of energies. Each element is a list of two float energy values in two states
     :param line_order: determine, which state line lies lower, so we can determine DeltaG from it
-    :return: ereorg, mingap, delta_g (float, float, float)
+    :param temperature: temperature (K) for KHop calculation
+    :return: ereorg, mingap, delta_g, khop (float, float, float, float)
     """
 
     mingap = float('inf')
@@ -104,13 +108,22 @@ def calculate_profile(energies: list[list], line_order: list[int]):
             # In case if there is no local non-zero minimums and non-zero border values DeltaG = 0
             delta_g = 0
 
-    return ereorg, mingap, delta_g
+    j_ev = scipy.constants.physical_constants['joule-electron volt relationship'][0]
+    hbar = j_ev * scipy.constants.hbar
+    boltzmann = j_ev * scipy.constants.Boltzmann
+    # Calculate KHop
+    khop = 0.5 * math.pi / hbar * mingap ** 2 * (1 / math.sqrt(
+        4 * math.pi * ereorg * boltzmann * temperature)) * math.exp(
+        (delta_g + ereorg) ** 2 / (-4 * ereorg * boltzmann * temperature))
+
+    return ereorg, mingap, delta_g, khop
 
 
 def energy_profile(folder_path: str, line_1_style: str, line_2_style: str, line_1_width: float, line_2_width: float,
                    line_1_color: str, line_2_color: str, line_1_marker: str, line_2_marker: str,
                    line_1_marker_size: int, line_2_marker_size: int, axis_line_width: float, label_font_size: float,
-                   x_min: float, y_min: float, x_max: float, y_max: float, plot_title: str, fig=None, canvas=None):
+                   x_min: float, y_min: float, x_max: float, y_max: float, plot_title: str, temperature: float,
+                   fig=None, canvas=None):
     """
     Read input files from folder, calculate ereorg, mingap and DeltaG and build an energies plot on both states
     :param folder_path: folder with .out files
@@ -131,6 +144,7 @@ def energy_profile(folder_path: str, line_1_style: str, line_2_style: str, line_
     :param x_max: max x coordinate on a graph
     :param y_max: max y coordinate on a graph
     :param plot_title:
+    :param temperature: temperature (K) for KHop value calculation
     :param fig: if set - draw the plot there
     :param canvas: if set - draw the plot there
     :return: ereorg, mingap, delta_g (float, float, float)
@@ -144,7 +158,7 @@ def energy_profile(folder_path: str, line_1_style: str, line_2_style: str, line_
     points_x = [int(x) / 10 ** max(len(p) - 1 for p in points_x) for x in points_x]
 
     energies = []
-    min_energy = float('inf')   # Min state energy will be considered as zero
+    min_energy = float('inf')  # Min state energy will be considered as zero
 
     lower_line = 0  # 0 if state_1 line is lower, 1 - if state_2
 
@@ -171,13 +185,13 @@ def energy_profile(folder_path: str, line_1_style: str, line_2_style: str, line_
     # Recalculate state energies from Daltons to Ev
     energies = [[(e - min_energy) * COEF_DALTON_TO_EV for e in state] for state in energies]
 
-    ereorg, mingap, delta_g = calculate_profile(energies, line_order)
+    ereorg, mingap, delta_g, khop = calculate_profile(energies, line_order, temperature)
 
     plot_energy_profile(energies, points_x, line_1_style, line_2_style, line_1_width, line_2_width, line_1_color,
                         line_2_color, line_1_marker, line_2_marker, line_1_marker_size, line_2_marker_size,
                         axis_line_width, label_font_size, x_min, y_min, x_max, y_max, plot_title, fig, canvas)
 
-    return ereorg, mingap, delta_g
+    return ereorg, mingap, delta_g, khop
 
 
 def main(folder_path: str, line_1_style: str, line_2_style: str, line_1_width: float, line_2_width: float,

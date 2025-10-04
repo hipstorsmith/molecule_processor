@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1035</width>
-    <height>608</height>
+    <width>1040</width>
+    <height>620</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>1035</width>
-    <height>608</height>
+    <width>1040</width>
+    <height>620</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>1035</width>
-    <height>608</height>
+    <width>1040</width>
+    <height>620</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -31,20 +31,20 @@
      <rect>
       <x>430</x>
       <y>10</y>
-      <width>591</width>
-      <height>581</height>
+      <width>600</width>
+      <height>600</height>
      </rect>
     </property>
     <property name="minimumSize">
      <size>
-      <width>591</width>
-      <height>581</height>
+      <width>600</width>
+      <height>600</height>
      </size>
     </property>
     <property name="maximumSize">
      <size>
-      <width>591</width>
-      <height>581</height>
+      <width>600</width>
+      <height>600</height>
      </size>
     </property>
     <property name="frameShape">
@@ -66,22 +66,22 @@
       <x>11</x>
       <y>10</y>
       <width>411</width>
-      <height>581</height>
+      <height>601</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="11" column="2">
-      <widget class="QLabel" name="label_42">
+     <item row="13" column="0">
+      <widget class="QLabel" name="label_43">
        <property name="text">
-        <string>Xmax</string>
+        <string>Axis width</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
-     <item row="11" column="3">
-      <widget class="QDoubleSpinBox" name="xMaxBox">
+     <item row="12" column="3">
+      <widget class="QDoubleSpinBox" name="yMaxBox">
        <property name="minimumSize">
         <size>
          <width>68</width>
@@ -95,108 +95,7 @@
         </size>
        </property>
        <property name="value">
-        <double>1.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="12" column="0">
-      <widget class="QLabel" name="label_47">
-       <property name="text">
-        <string>Ymin</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="13" column="3">
-      <widget class="QDoubleSpinBox" name="labelFontSizeBox">
-       <property name="minimumSize">
-        <size>
-         <width>68</width>
-         <height>20</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>68</width>
-         <height>20</height>
-        </size>
-       </property>
-       <property name="value">
-        <double>10.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="12" column="2">
-      <widget class="QLabel" name="label_49">
-       <property name="text">
-        <string>Ymax</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="3">
-      <widget class="QComboBox" name="line2ColorBox">
-       <item>
-        <property name="text">
-         <string>orange</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>blue</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>green</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>red</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>cyan</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>magenta</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>yellow</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>black</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string/>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item row="8" column="0">
-      <widget class="QLabel" name="label_30">
-       <property name="frameShape">
-        <enum>QFrame::NoFrame</enum>
-       </property>
-       <property name="text">
-        <string>Marker size</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        <double>2.000000000000000</double>
        </property>
       </widget>
      </item>
@@ -258,6 +157,16 @@
        </item>
       </widget>
      </item>
+     <item row="13" column="2">
+      <widget class="QLabel" name="label_41">
+       <property name="text">
+        <string>Label font size</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
      <item row="12" column="1">
       <widget class="QDoubleSpinBox" name="yMinBox">
        <property name="minimumSize">
@@ -274,74 +183,10 @@
        </property>
       </widget>
      </item>
-     <item row="13" column="2">
-      <widget class="QLabel" name="label_41">
-       <property name="text">
-        <string>Label font size</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
      <item row="9" column="0" colspan="4">
       <widget class="Line" name="line_2">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="12" column="3">
-      <widget class="QDoubleSpinBox" name="yMaxBox">
-       <property name="minimumSize">
-        <size>
-         <width>68</width>
-         <height>20</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>68</width>
-         <height>20</height>
-        </size>
-       </property>
-       <property name="value">
-        <double>2.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="13" column="1">
-      <widget class="QDoubleSpinBox" name="axisWidthBox">
-       <property name="minimumSize">
-        <size>
-         <width>68</width>
-         <height>20</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>68</width>
-         <height>20</height>
-        </size>
-       </property>
-       <property name="value">
-        <double>1.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="11" column="1">
-      <widget class="QDoubleSpinBox" name="xMinBox">
-       <property name="minimumSize">
-        <size>
-         <width>68</width>
-         <height>20</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>68</width>
-         <height>20</height>
-        </size>
        </property>
       </widget>
      </item>
@@ -413,10 +258,55 @@
        </property>
       </widget>
      </item>
+     <item row="11" column="1">
+      <widget class="QDoubleSpinBox" name="xMinBox">
+       <property name="minimumSize">
+        <size>
+         <width>68</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>68</width>
+         <height>20</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="1">
+      <widget class="QDoubleSpinBox" name="axisWidthBox">
+       <property name="minimumSize">
+        <size>
+         <width>68</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>68</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="value">
+        <double>1.000000000000000</double>
+       </property>
+      </widget>
+     </item>
      <item row="11" column="0">
       <widget class="QLabel" name="label_46">
        <property name="text">
         <string>Xmin</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="2">
+      <widget class="QLabel" name="label_33">
+       <property name="text">
+        <string>Marker size</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -436,53 +326,15 @@
        </property>
       </widget>
      </item>
-     <item row="21" column="1" colspan="3">
-      <widget class="QLineEdit" name="energyGapEdit">
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="2">
-      <widget class="QLabel" name="label_33">
-       <property name="text">
-        <string>Marker size</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="21" column="0">
+     <item row="23" column="0">
       <widget class="QLabel" name="label_52">
        <property name="text">
         <string>Energy Gap</string>
        </property>
       </widget>
      </item>
-     <item row="19" column="0">
-      <widget class="QLabel" name="label_50">
-       <property name="text">
-        <string>Ereorg</string>
-       </property>
-      </widget>
-     </item>
-     <item row="20" column="0">
-      <widget class="QLabel" name="label_51">
-       <property name="text">
-        <string>ΔG</string>
-       </property>
-      </widget>
-     </item>
-     <item row="20" column="1" colspan="3">
-      <widget class="QLineEdit" name="deltaGEdit">
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="19" column="1" colspan="3">
-      <widget class="QLineEdit" name="ereorgEdit">
+     <item row="23" column="1" colspan="3">
+      <widget class="QLineEdit" name="energyGapEdit">
        <property name="readOnly">
         <bool>true</bool>
        </property>
@@ -495,17 +347,31 @@
        </property>
       </widget>
      </item>
-     <item row="14" column="0">
-      <widget class="QLabel" name="label_48">
+     <item row="21" column="0">
+      <widget class="QLabel" name="label_50">
        <property name="text">
-        <string>Title</string>
+        <string>Ereorg</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="0" colspan="4">
-      <widget class="Line" name="line">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+     <item row="21" column="1" colspan="3">
+      <widget class="QLineEdit" name="ereorgEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="22" column="1" colspan="3">
+      <widget class="QLineEdit" name="deltaGEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="22" column="0">
+      <widget class="QLabel" name="label_51">
+       <property name="text">
+        <string>ΔG</string>
        </property>
       </widget>
      </item>
@@ -516,13 +382,6 @@
        </property>
        <property name="readOnly">
         <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="3">
-      <widget class="QToolButton" name="qdptFIlesButton">
-       <property name="text">
-        <string>...</string>
        </property>
       </widget>
      </item>
@@ -540,23 +399,24 @@
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
-      <widget class="QSpinBox" name="line1MarkerSizeBox">
-       <property name="value">
-        <number>2</number>
+     <item row="1" column="0" colspan="4">
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
        </property>
       </widget>
      </item>
-     <item row="5" column="3">
-      <widget class="QDoubleSpinBox" name="line2WidthBox"/>
-     </item>
-     <item row="6" column="2">
-      <widget class="QLabel" name="label_39">
+     <item row="14" column="0">
+      <widget class="QLabel" name="label_48">
        <property name="text">
-        <string>Line color</string>
+        <string>Title</string>
        </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QToolButton" name="qdptFIlesButton">
+       <property name="text">
+        <string>...</string>
        </property>
       </widget>
      </item>
@@ -573,20 +433,174 @@
        </property>
       </widget>
      </item>
-     <item row="13" column="0">
-      <widget class="QLabel" name="label_43">
+     <item row="5" column="3">
+      <widget class="QDoubleSpinBox" name="line2WidthBox"/>
+     </item>
+     <item row="8" column="1">
+      <widget class="QSpinBox" name="line1MarkerSizeBox">
+       <property name="value">
+        <number>2</number>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="QLabel" name="label_39">
        <property name="text">
-        <string>Axis width</string>
+        <string>Line color</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
-     <item row="10" column="0" colspan="4">
-      <widget class="QLabel" name="label_44">
+     <item row="11" column="2">
+      <widget class="QLabel" name="label_42">
        <property name="text">
-        <string>Grid settings</string>
+        <string>Xmax</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="0">
+      <widget class="QLabel" name="label_47">
+       <property name="text">
+        <string>Ymin</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="3">
+      <widget class="QDoubleSpinBox" name="xMaxBox">
+       <property name="minimumSize">
+        <size>
+         <width>68</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>68</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="value">
+        <double>1.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="24" column="1" colspan="3">
+      <widget class="QLineEdit" name="kHopEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="3">
+      <widget class="QComboBox" name="line2ColorBox">
+       <item>
+        <property name="text">
+         <string>orange</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>blue</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>green</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>red</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>cyan</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>magenta</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>yellow</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>black</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string/>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="label_30">
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
+       <property name="text">
+        <string>Marker size</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="3">
+      <widget class="QDoubleSpinBox" name="labelFontSizeBox">
+       <property name="minimumSize">
+        <size>
+         <width>68</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>68</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="value">
+        <double>10.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="2">
+      <widget class="QLabel" name="label_49">
+       <property name="text">
+        <string>Ymax</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="1" colspan="2">
+      <widget class="QPushButton" name="buildPlotButton">
+       <property name="text">
+        <string>Plot</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0" colspan="4">
+      <widget class="QLabel" name="label_40">
+       <property name="text">
+        <string>Line settings</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -603,23 +617,6 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="0" colspan="4">
-      <widget class="QLabel" name="label_40">
-       <property name="text">
-        <string>Line settings</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="15" column="1" colspan="2">
-      <widget class="QPushButton" name="buildPlotButton">
-       <property name="text">
-        <string>Plot</string>
-       </property>
-      </widget>
-     </item>
      <item row="3" column="0" colspan="2">
       <widget class="QLabel" name="label">
        <property name="text">
@@ -630,28 +627,15 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="2">
-      <widget class="QLabel" name="label_36">
+     <item row="10" column="0" colspan="4">
+      <widget class="QLabel" name="label_44">
        <property name="text">
-        <string>Line style</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2" colspan="2">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>State №2</string>
+        <string>Grid settings</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
        </property>
       </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="QDoubleSpinBox" name="line1WidthBox"/>
      </item>
      <item row="4" column="1">
       <widget class="QComboBox" name="line1StyleBox">
@@ -675,6 +659,29 @@
          <string>..</string>
         </property>
        </item>
+      </widget>
+     </item>
+     <item row="3" column="2" colspan="2">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>State №2</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QDoubleSpinBox" name="line1WidthBox"/>
+     </item>
+     <item row="4" column="2">
+      <widget class="QLabel" name="label_36">
+       <property name="text">
+        <string>Line style</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
       </widget>
      </item>
      <item row="4" column="3">
@@ -701,10 +708,13 @@
        </item>
       </widget>
      </item>
-     <item row="5" column="2">
-      <widget class="QLabel" name="label_32">
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_31">
+       <property name="frameShape">
+        <enum>QFrame::NoFrame</enum>
+       </property>
        <property name="text">
-        <string>Line width</string>
+        <string>Line style</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -718,19 +728,6 @@
        </property>
        <property name="text">
         <string>Line width</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label_31">
-       <property name="frameShape">
-        <enum>QFrame::NoFrame</enum>
-       </property>
-       <property name="text">
-        <string>Line style</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -786,10 +783,44 @@
        </item>
       </widget>
      </item>
+     <item row="5" column="2">
+      <widget class="QLabel" name="label_32">
+       <property name="text">
+        <string>Line width</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
      <item row="8" column="3">
       <widget class="QSpinBox" name="line2MarkerSizeBox">
        <property name="value">
         <number>2</number>
+       </property>
+      </widget>
+     </item>
+     <item row="24" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>KHop</string>
+       </property>
+      </widget>
+     </item>
+     <item row="19" column="1" colspan="3">
+      <widget class="QDoubleSpinBox" name="temperatureBox">
+       <property name="maximum">
+        <double>99990000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>298.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="19" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Temperature (K)</string>
        </property>
       </widget>
      </item>
