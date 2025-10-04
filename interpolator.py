@@ -10,8 +10,8 @@ from operator import itemgetter
 
 RADIUS_TABLE = {atom.symbol: (atom.covalent_radius or 246) / 100 for atom in mendeleev.get_all_elements()}
 HEAD = """$CONTRL RUNTYP=energy SCFTYP=MCSCF dfttyp=none
-  MAXIT=200 ICHARG={1,-1} MULT=2 d5=.t. nzvar={nzvar}
-  exetyp={check,run} coord={coord}
+  MAXIT=200 ICHARG={{1,-1}} MULT=2 d5=.t. nzvar={nzvar}
+  exetyp={{check,run}} coord={coord_type}
  $END
  $SYSTEM TIMLIM=3600000 MWORDS=350 $END
  $smp smppar=.t. load=0 call64=.t. $end
@@ -19,8 +19,8 @@ HEAD = """$CONTRL RUNTYP=energy SCFTYP=MCSCF dfttyp=none
  $trans mptran=2 dirtrf=.t. aoints=dist altpar=.t. mode=112 $end 
  $BASIS  GBASIS=n31 ngauss=6 NDFUNC=1 NPFUNC=1 $END
  $SCF DIRSCF=.TRUE. SOSCF=.f. $END
-{!} $GUESS GUESS=moread norb={norb} $END
- $DET NCORE={ncore} NACT=2 NELS={1,3} nstate=2 iroot=1 ITERMX=500 PURES=.t.             
+{{!}} $GUESS GUESS=moread norb={{norb}} $END
+ $DET NCORE={{ncore}} NACT=2 NELS={{1,3}} nstate=2 iroot=1 ITERMX=500 PURES=.t.             
   wstate(1)=1.,1.                                                               
   distci=64                                                                     
  $END                                                                           
@@ -483,10 +483,10 @@ def write_z_matrix(file_path: AnyStr, title: str, atoms_list: List[Atom], int_fo
         (f"Invalid attribute name: '{coord_var_name}'. Must be 'init_proc_data_value', 'trans_proc_data_value' or"
          f" 'interpolation_points'")
 
-    # TODO: coord='unique' when conversion to xyz
+    # TODO: coord_type='unique' when conversion to xyz
 
     with open(file_path, 'w', encoding='utf8') as f:
-        f.write(HEAD.format(title=title, nzvar=3 * len(atoms_list) - 6, coord='zmt'))
+        f.write(HEAD.format(title=title, nzvar=3 * len(atoms_list) - 6, coord_type='zmt'))
         for atom in atoms_list:
             line = '  '.join(
                 f"{str(idx).ljust(int_format)}  {str(var).ljust(column_widths[i])}" for i, (idx, var) in
