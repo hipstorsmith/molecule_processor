@@ -7,19 +7,19 @@
     <x>0</x>
     <y>0</y>
     <width>1010</width>
-    <height>530</height>
+    <height>550</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>1010</width>
-    <height>530</height>
+    <height>550</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>1010</width>
-    <height>530</height>
+    <height>550</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@
       <x>10</x>
       <y>0</y>
       <width>991</width>
-      <height>481</height>
+      <height>502</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
@@ -64,7 +64,21 @@
        </property>
       </widget>
      </item>
-     <item row="18" column="0" colspan="8">
+     <item row="1" column="3" rowspan="8">
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="3" rowspan="9">
+      <widget class="Line" name="line_3">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="19" column="0" colspan="8">
       <widget class="Line" name="line_4">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -81,7 +95,7 @@
        </property>
       </widget>
      </item>
-     <item row="16" column="0">
+     <item row="17" column="0">
       <widget class="QPushButton" name="interpolatorOpenFolderButton">
        <property name="text">
         <string>Open output folder</string>
@@ -139,7 +153,7 @@
        </property>
       </widget>
      </item>
-     <item row="19" column="0">
+     <item row="20" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
         <string>Plot results</string>
@@ -149,7 +163,7 @@
        </property>
       </widget>
      </item>
-     <item row="20" column="0">
+     <item row="21" column="0">
       <widget class="QPushButton" name="plotRunEditorButton">
        <property name="text">
         <string>Plot Editor</string>
@@ -180,7 +194,7 @@
        </property>
       </widget>
      </item>
-     <item row="17" column="0">
+     <item row="18" column="0">
       <widget class="QPushButton" name="interpolationRunButton">
        <property name="maximumSize">
         <size>
@@ -500,17 +514,10 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="3" rowspan="8">
-      <widget class="Line" name="line">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="3" rowspan="8">
-      <widget class="Line" name="line_3">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
+     <item row="16" column="0">
+      <widget class="QCheckBox" name="interpolatorConvertToXyz">
+       <property name="text">
+        <string>Coordinates to XYZ</string>
        </property>
       </widget>
      </item>
