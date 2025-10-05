@@ -142,7 +142,8 @@ class MainWindow(QtWidgets.QMainWindow):
             'xyz_file_init': self.interpolationInitialFileEdit.text(),
             'xyz_file_trans': self.interpolationTransformedFileEdit.text(),
             'zmt_folder_out': self.interpolationOutputFolderEdit.text(),
-            'n_points': self.interpolationStepsAmountBox.value()
+            'n_points': self.interpolationStepsAmountBox.value(),
+            'output_xyz': self.interpolatorConvertToXyz.isChecked(),
         }
         self._safe_call(run_interpolation, **kwargs)
 
