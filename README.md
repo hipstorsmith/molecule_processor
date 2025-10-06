@@ -1,9 +1,9 @@
-# ScanEP
+# Molecule Processor
 
 
-ScanEP is designed to calculate the parameters of hopping transport according to Marcus theory in organic amorphous 
-and crystalline semiconductors using the FireFly software package. The calculations are performed using the CASSCF and 
-XMCQDPT methods. It includes the following modules:
+Molecule Processor is designed to calculate the parameters of hopping transport according to Marcus theory in organic 
+amorphous and crystalline semiconductors using the FireFly software package. The calculations are performed using the 
+CASSCF and XMCQDPT methods. It includes the following modules:
   - Molecular delimiter
   - Inp files generator
   - Method changer
