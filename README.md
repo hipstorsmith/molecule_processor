@@ -10,8 +10,6 @@ CASSCF and XMCQDPT methods. It includes the following modules:
   - VEC Changer
   - QDPT result processing
 
-Partially based on https://github.com/ilyxych96/ScanEP
-
 ### Molecular delimiter
 > If you have molecular modeling cell or crystal fragment (typically 2×2×2 to 3×3×3 unit cells) and you need monomers 
 > and dimers you can use this module
@@ -65,7 +63,7 @@ Install python and libraries from requirements.txt
 Run the program
 > python molecule_processor.py
 
-### Build to exe
+### Build to executable
 Download all files in directory .../molecule_processor/
 
 Install python and libraries from requirements.txt
@@ -73,3 +71,11 @@ Install python and libraries from requirements.txt
 
 Install pyinstaller
 > pip install pyinstaller
+
+Build to EXE for Windows
+> pyinstaller --onefile --name molecule_processor --icon icon.ico  --add-data "design;design" --add-data "README.md;." 
+> --noconsole molecule_processor.py
+
+Build to EXE for macOS/Linux
+> pyinstaller --onefile --name molecule_processor --icon icon.ico  --add-data "design:design" --add-data "README.md:." 
+> --noconsole molecule_processor.py
