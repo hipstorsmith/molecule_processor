@@ -1,5 +1,5 @@
 import argparse
-import mendeleev
+import periodictable
 import numpy as np
 import re
 import os
@@ -8,7 +8,6 @@ from typing import List, Tuple, AnyStr
 from itertools import groupby, compress, permutations
 from operator import itemgetter
 
-RADIUS_TABLE = {atom.symbol: (atom.covalent_radius or 246) / 100 for atom in mendeleev.get_all_elements()}
 HEAD = """$CONTRL RUNTYP=energy SCFTYP=MCSCF dfttyp=none
   MAXIT=200 ICHARG={{1,-1}} MULT=2 d5=.t. nzvar={nzvar}
   exetyp={{check,run}} coord={coord_type}
@@ -133,6 +132,18 @@ class Atom:
             Calculate interpolation points between initial and transformed atom distance, angle and dihedral
             args:
                 n_points: number of interpolation points
+        validate_angle(path):
+            Ensure that angle is in 0-180 range
+        validate_atom(self, atom, path, allow_valency_one):
+            Ensure that on this atom it is possible to be a base
+        fallback_atoms(self, fallback_atoms, max_len):
+            Base atom on non-reliable atoms
+        route(self, graph, allow_valency_one):
+            Calculate the longest possible route in graph, required for calculation of output parameters. Route should
+            be shorter than 4 atoms (including current) and should not include atoms with one connection only, because
+            of their instability
+        convert_to_xyz(self, queue_atoms):
+            Convert atom coordinates to xyz coordinates
     """
 
     def __init__(self, idx: int, initial_atom_line: str, trans_atom_line: str):
@@ -149,6 +160,9 @@ class Atom:
         self.final_idx = None
         self.name, self.init_coord = initial_atom_line.split(maxsplit=1)
         _, self.trans_coord = trans_atom_line.split(maxsplit=1)
+        self.full_name = periodictable.elements.symbol(self.name).name.upper()
+        self.atomic_number = float(periodictable.elements.symbol(self.name).number)
+        self.covalent_radius = periodictable.elements.symbol(self.name).covalent_radius
         self.init_coord = np.array([float(x) for x in self.init_coord.split()])
         self.trans_coord = np.array([float(x) for x in self.trans_coord.split()])
         self.connections = set()
@@ -157,6 +171,9 @@ class Atom:
         self.init_proc_data_value = []
         self.trans_proc_data_value = []
         self.interpolation_points = []
+        self.interpolation_points_xyz = []
+        self.init_coord_xyz = np.zeros(3)
+        self.trans_coord_xyz = np.zeros(3)
 
     def connect(self, other: 'Atom'):
         """
@@ -168,7 +185,7 @@ class Atom:
         self.connections.add(other.init_idx)
         other.connections.add(self.init_idx)
 
-    def calculate_data(self, queue_atoms, n_points):
+    def calculate_data(self, queue_atoms: List['Atom'], n_points: int):
         """
         Get all possible measurements for Atom, based on queue_atoms (fill self.proc_data_idx, self.init_proc_data_value,
         self.trans_proc_data_value)
@@ -195,6 +212,7 @@ class Atom:
             self.trans_proc_data_value.append(
                 self.dihedral(queue_atoms[0], queue_atoms[1], queue_atoms[2], 'trans_coord'))
         self.interpolate(n_points)
+        self.convert_to_xyz(queue_atoms)
         self.init_proc_data_value = [self.init_proc_data_value]
         self.trans_proc_data_value = [self.trans_proc_data_value]
 
@@ -260,24 +278,41 @@ class Atom:
         x = np.dot(v, w)
         y = np.dot(np.cross(vec_2, v), w)
 
-        return np.degrees(np.arctan2(y, x))  # self.fix_dihedral(np.degrees(np.arctan2(y, x)))
+        return np.degrees(np.arctan2(y, x))
 
     @staticmethod
-    def validate_angle(path: List['Atom']):
+    def validate_angle(path: List['Atom']) -> bool:
+        """
+        Ensure that angle is in 0-180 range
+        :param path:
+        :return:
+        """
         if len(path) >= 3:
             atom_a, atom_b, atom_c = path[-3], path[-2], path[-1]
             return atom_a.angle(atom_b, atom_c, 'init_coord') not in (0, 180)
         return True
 
-    def validate_atom(self, atom, path, allow_valency_one):
-        """Checks if the atom is valid to be added to the path based on FORBIDDEN and angle conditions."""
+    def validate_atom(self, atom: 'Atom', path: List['Atom'], allow_valency_one: bool) -> bool:
+        """
+        Ensure that on this atom it is possible to be a base
+        :param atom:
+        :param path:
+        :param allow_valency_one:
+        :return:
+        """
         if atom in path or atom == self:
             return False
         if not allow_valency_one and atom.name in VALENCY_ONE:
             return False
         return True
 
-    def fallback_atoms(self, fallback_atoms, max_len):
+    def fallback_atoms(self, fallback_atoms: List['Atom'], max_len: int) -> List['Atom']:
+        """
+        Base atom on non-reliable atoms
+        :param fallback_atoms:
+        :param max_len:
+        :return:
+        """
         for atom_selection in sorted(permutations(fallback_atoms, max_len - 1),
                                      key=lambda selection: sum(atom.name not in VALENCY_ONE for atom in selection),
                                      reverse=True):
@@ -333,7 +368,7 @@ class Atom:
                                         key=lambda atom: atom.name in VALENCY_ONE)[:required_length - 1]
         return selected_path[1:]
 
-    def interpolate(self, n_points):
+    def interpolate(self, n_points: int):
         """
         Calculate interpolation points between initial and transformed atom distance, angle and dihedral
         :param n_points: number of interpolation points
@@ -343,15 +378,137 @@ class Atom:
         if (len(self.trans_proc_data_value) == 3) and (
                 abs(self.trans_proc_data_value[2] - self.init_proc_data_value[2]) >= 180):
             self.init_proc_data_value[2] = self.init_proc_data_value[2] + 360 if self.init_proc_data_value[2] < 0 else \
-            self.init_proc_data_value[2]
+                self.init_proc_data_value[2]
             self.trans_proc_data_value[2] = self.trans_proc_data_value[2] + 360 if self.trans_proc_data_value[
                                                                                        2] < 0 else \
-            self.trans_proc_data_value[2]
+                self.trans_proc_data_value[2]
         for var_idx, (start, end) in enumerate(zip(self.init_proc_data_value, self.trans_proc_data_value)):
             points = np.linspace(start, end, n_points + 2)[1:-1]
             self.interpolation_points.append(points.tolist())
         self.interpolation_points = list(map(list, zip(*self.interpolation_points)))
         self.interpolation_points.extend([[]] * (n_points - len(self.interpolation_points)))
+
+    @staticmethod
+    def _guide_vector(vector: np.ndarray) -> np.ndarray:
+        """
+        Find a guide vector
+        :param vector:
+        :return:
+        """
+        return vector / np.linalg.norm(vector)
+
+    def _find_norm(self, vector: np.ndarray) -> np.ndarray:
+        """
+        Find a norm to vector.
+        :param vector:
+        :return:
+        """
+
+        axis = np.array([1.0, 0.0, 0.0]) if abs(vector[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+        return self._guide_vector(np.cross(vector, axis))
+
+    def convert_to_xyz(self, queue_atoms: List['Atom']):
+        """
+        Convert atom coordinates to xyz coordinates
+        :param queue_atoms: base on which atom coordinates will be calculated
+        :return:
+        """
+
+        if len(queue_atoms) == 0:
+            self.init_coord_xyz = [np.zeros(3)]
+        elif len(queue_atoms) == 1:
+            atom_0_coord = np.array(queue_atoms[0].init_coord_xyz[0])
+            self.init_coord_xyz = [atom_0_coord + np.array([self.init_proc_data_value[0], 0, 0])]
+        elif len(queue_atoms) == 2:
+            atom_0_coord = np.array(queue_atoms[0].init_coord_xyz[0])
+            atom_1_coord = np.array(queue_atoms[1].init_coord_xyz[0])
+            distance, angle = self.init_proc_data_value
+            vec1 = self._guide_vector(atom_1_coord - atom_0_coord)
+            vec2 = self._find_norm(vec1)
+            angle = np.deg2rad(angle)
+            self.init_coord_xyz = [atom_0_coord + distance * (np.cos(angle) * vec1 + np.sin(angle) * vec2)]
+        elif len(queue_atoms) == 3:
+            atom_0_coord = np.array(queue_atoms[0].init_coord_xyz[0])
+            atom_1_coord = np.array(queue_atoms[1].init_coord_xyz[0])
+            atom_2_coord = np.array(queue_atoms[2].init_coord_xyz[0])
+            distance, angle, dihedral = self.init_proc_data_value
+            vec1 = self._guide_vector(atom_1_coord - atom_0_coord)
+            vec2 = self._guide_vector(atom_2_coord - atom_1_coord)
+            norm = np.cross(vec1, vec2)
+            if np.linalg.norm(norm) < 1e-12:
+                norm = np.cross(vec1, self._find_norm(vec1))
+            norm_hat = self._guide_vector(norm)
+            vec3 = np.cross(norm_hat, vec1)
+            angle = np.deg2rad(angle)
+            dihedral = np.deg2rad(dihedral)
+            self.init_coord_xyz = [atom_0_coord + distance * (np.cos(angle) * vec1 + np.sin(angle) * (
+                    np.cos(dihedral) * vec3 + np.sin(dihedral) * norm_hat))]
+
+        if len(queue_atoms) == 0:
+            self.trans_coord_xyz = [np.zeros(3)]
+        elif len(queue_atoms) == 1:
+            atom_0_coord = np.array(queue_atoms[0].trans_coord_xyz[0])
+            self.trans_coord_xyz = [atom_0_coord + np.array([self.trans_proc_data_value[0], 0, 0])]
+        elif len(queue_atoms) == 2:
+            atom_0_coord = np.array(queue_atoms[0].trans_coord_xyz[0])
+            atom_1_coord = np.array(queue_atoms[1].trans_coord_xyz[0])
+            distance, angle = self.trans_proc_data_value
+            vec1 = self._guide_vector(atom_1_coord - atom_0_coord)
+            vec2 = self._find_norm(vec1)
+            angle = np.deg2rad(angle)
+            self.trans_coord_xyz = [atom_0_coord + distance * (np.cos(angle) * vec1 + np.sin(angle) * vec2)]
+        elif len(queue_atoms) == 3:
+            atom_0_coord = np.array(queue_atoms[0].trans_coord_xyz[0])
+            atom_1_coord = np.array(queue_atoms[1].trans_coord_xyz[0])
+            atom_2_coord = np.array(queue_atoms[2].trans_coord_xyz[0])
+            distance, angle, dihedral = self.trans_proc_data_value
+            vec1 = self._guide_vector(atom_1_coord - atom_0_coord)
+            vec2 = self._guide_vector(atom_2_coord - atom_1_coord)
+            norm = np.cross(vec1, vec2)
+            if np.linalg.norm(norm) < 1e-12:
+                norm = np.cross(vec1, self._find_norm(vec1))
+            norm_hat = self._guide_vector(norm)
+            vec3 = np.cross(norm_hat, vec1)
+            angle = np.deg2rad(angle)
+            dihedral = np.deg2rad(dihedral)
+            self.trans_coord_xyz = [atom_0_coord + distance * (np.cos(angle) * vec1 + np.sin(angle) * (
+                    np.cos(dihedral) * vec3 + np.sin(dihedral) * norm_hat))]
+
+        for i, interpolation_point in enumerate(self.interpolation_points):
+            if len(queue_atoms) == 0:
+                assert len(interpolation_point) == 0
+                self.interpolation_points_xyz.append([0, 0, 0])
+            elif len(queue_atoms) == 1:
+                assert len(interpolation_point) == 1
+                atom_0_coord = np.array(queue_atoms[0].interpolation_points_xyz[i])
+                self.interpolation_points_xyz.append(atom_0_coord + np.array([interpolation_point[0], 0, 0]))
+            elif len(queue_atoms) == 2:
+                assert len(interpolation_point) == 2
+                atom_0_coord = np.array(queue_atoms[0].interpolation_points_xyz[i])
+                atom_1_coord = np.array(queue_atoms[1].interpolation_points_xyz[i])
+                distance, angle = interpolation_point
+                vec1 = self._guide_vector(atom_1_coord - atom_0_coord)
+                vec2 = self._find_norm(vec1)
+                angle = np.deg2rad(angle)
+                self.interpolation_points_xyz.append(
+                    atom_0_coord + distance * (np.cos(angle) * vec1 + np.sin(angle) * vec2))
+            elif len(queue_atoms) == 3:
+                assert len(interpolation_point) == 3
+                atom_0_coord = np.array(queue_atoms[0].interpolation_points_xyz[i])
+                atom_1_coord = np.array(queue_atoms[1].interpolation_points_xyz[i])
+                atom_2_coord = np.array(queue_atoms[2].interpolation_points_xyz[i])
+                distance, angle, dihedral = interpolation_point
+                vec1 = self._guide_vector(atom_1_coord - atom_0_coord)
+                vec2 = self._guide_vector(atom_2_coord - atom_1_coord)
+                norm = np.cross(vec1, vec2)
+                if np.linalg.norm(norm) < 1e-12:
+                    norm = np.cross(vec1, self._find_norm(vec1))
+                norm_hat = self._guide_vector(norm)
+                vec3 = np.cross(norm_hat, vec1)
+                angle = np.deg2rad(angle)
+                dihedral = np.deg2rad(dihedral)
+                self.interpolation_points_xyz.append(atom_0_coord + distance * (np.cos(angle) * vec1 + np.sin(angle) * (
+                            np.cos(dihedral) * vec3 + np.sin(dihedral) * norm_hat)))
 
 
 def process_atoms_list(atoms_list: List[Atom], n_points: int) -> Tuple[List[Atom], List[int]]:
@@ -466,25 +623,8 @@ def find_closest_pair_between_subgraphs(atoms_list: List[Atom], subgraphs: List[
                                                key=itemgetter('graph1'))]
 
 
-def write_z_matrix(file_path: AnyStr, title: str, atoms_list: List[Atom], int_format: int, column_widths: List[int],
-                   coord_var_name: str, point_idx: int = 0):
-    """
-    Write z-matrix to file
-    :param file_path: path to output file
-    :param title: molecule title
-    :param atoms_list: list of atoms
-    :param int_format: length of integers in output file
-    :param column_widths: widths of columns in output file
-    :param coord_var_name: name of coordinate array in Atom to put into file
-    :param point_idx: number of interpolation point in list (0 for initial and transformed)
-    :return:
-    """
-    assert coord_var_name in ('init_proc_data_value', 'trans_proc_data_value', 'interpolation_points'), \
-        (f"Invalid attribute name: '{coord_var_name}'. Must be 'init_proc_data_value', 'trans_proc_data_value' or"
-         f" 'interpolation_points'")
-
-    # TODO: coord_type='unique' when conversion to xyz
-
+def write_internal_coords(file_path: AnyStr, title: str, atoms_list: List[Atom], int_format: int,
+                          column_widths: List[int], coord_var_name: str, point_idx: int = 0):
     with open(file_path, 'w', encoding='utf8') as f:
         f.write(HEAD.format(title=title, nzvar=3 * len(atoms_list) - 6, coord_type='zmt'))
         for atom in atoms_list:
@@ -507,7 +647,46 @@ def write_z_matrix(file_path: AnyStr, title: str, atoms_list: List[Atom], int_fo
                     f"  {idx.rjust(int_format)}," for idx in re.sub(r"[a-zA-Z]", "", var).split("_")) + "\n")
         f.write(" $END \n")
 
-def run_interpolation(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
+def write_xyz_coords(file_path: AnyStr, title: str, atoms_list: List[Atom], coord_var_name: str, point_idx: int = 0):
+    with open(file_path, 'w', encoding='utf8') as f:
+        f.write(HEAD.format(title=title, nzvar=3 * len(atoms_list) - 6, coord_type='unique'))
+        for atom in atoms_list:
+            coord = getattr(atom, coord_var_name)[point_idx]
+            f.write(f' {atom.full_name:<10} {str(atom.atomic_number):>4} {str(round(coord[0], 10)):>14} '
+                    f'{str(round(coord[1], 10)):>14} {str(round(coord[2], 10)):>14}\n')
+        f.write(' $END')
+
+
+def write_z_matrix(output_xyz: bool, file_path: AnyStr, title: str, atoms_list: List[Atom], int_format: int,
+                   column_widths: List[int], coord_var_name: str, point_idx: int = 0):
+    """
+    Write z-matrix to file
+    :param output_xyz: convert coordinates to xyz while writing to file
+    :param file_path: path to output file
+    :param title: molecule title
+    :param atoms_list: list of atoms
+    :param int_format: length of integers in output file
+    :param column_widths: widths of columns in output file
+    :param coord_var_name: name of coordinate array in Atom to put into file
+    :param point_idx: number of interpolation point in list (0 for initial and transformed)
+    :return:
+    """
+    assert coord_var_name in ('init_proc_data_value', 'trans_proc_data_value', 'interpolation_points'), \
+        (f"Invalid attribute name: '{coord_var_name}'. Must be 'init_proc_data_value', 'trans_proc_data_value' or"
+         f" 'interpolation_points'")
+
+    coord_xyz_map = {'init_proc_data_value': 'init_coord_xyz',
+                     'trans_proc_data_value': 'trans_coord_xyz',
+                     'interpolation_points': 'interpolation_points_xyz'}
+
+    if output_xyz:
+        write_xyz_coords(file_path, title, atoms_list, coord_xyz_map[coord_var_name], point_idx)
+    else:
+        write_internal_coords(file_path, title, atoms_list, int_format, column_widths, coord_var_name, point_idx)
+
+
+def run_interpolation(xyz_file_init: AnyStr, xyz_file_trans: AnyStr, zmt_folder_out: AnyStr, n_points: int,
+                      output_xyz: bool):
     # read original xyz files without header
     with open(xyz_file_init, encoding='utf8') as f:
         xyz_init_coord = f.readlines()
@@ -525,7 +704,7 @@ def run_interpolation(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
         for atom2 in atoms_list:
             if (atom1.name not in VALENCY_ONE and atom2.name not in VALENCY_ONE and
                     atom1.init_idx != atom2.init_idx and
-                    atom1.distance(atom2, 'init_coord') <= RADIUS_TABLE[atom1.name] + RADIUS_TABLE[atom2.name]):
+                    atom1.distance(atom2, 'init_coord') <= atom1.covalent_radius + atom2.covalent_radius):
                 atom1.connect(atom2)
 
     while len(subgraphs := find_subgraphs(atoms_list)) != 1:
@@ -540,13 +719,17 @@ def run_interpolation(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
     atoms_list, column_widths = process_atoms_list(atoms_list, n_points)
     int_format = len(str(len(atoms_list)))
 
-    write_z_matrix(file_path=os.path.join(zmt_folder_out, os.path.splitext(os.path.basename(xyz_file_init))[0] + '.000.inp'),
+    write_z_matrix(output_xyz=output_xyz,
+                   file_path=os.path.join(zmt_folder_out,
+                                          os.path.splitext(os.path.basename(xyz_file_init))[0] + '.000.inp'),
                    title=title,
                    atoms_list=atoms_list,
                    int_format=int_format,
                    column_widths=column_widths,
                    coord_var_name='init_proc_data_value')
-    write_z_matrix(file_path=os.path.join(zmt_folder_out, os.path.splitext(os.path.basename(xyz_file_init))[0] + '.100.inp'),
+    write_z_matrix(output_xyz=output_xyz,
+                   file_path=os.path.join(zmt_folder_out,
+                                          os.path.splitext(os.path.basename(xyz_file_init))[0] + '.100.inp'),
                    title=title,
                    atoms_list=atoms_list,
                    int_format=int_format,
@@ -555,7 +738,8 @@ def run_interpolation(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
     for i in range(1, n_points):
         coord = str(i * 100 // (n_points - 1)).zfill(3)
         filename = os.path.splitext(os.path.basename(xyz_file_init))[0] + f'.{coord}.inp'
-        write_z_matrix(file_path=os.path.join(zmt_folder_out, filename),
+        write_z_matrix(output_xyz=output_xyz,
+                       file_path=os.path.join(zmt_folder_out, filename),
                        title=title,
                        atoms_list=atoms_list,
                        int_format=int_format,
@@ -563,8 +747,9 @@ def run_interpolation(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
                        coord_var_name='interpolation_points',
                        point_idx=i)
 
-def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points):
-    run_interpolation(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points)
+
+def main(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points, output_xyz):
+    run_interpolation(xyz_file_init, xyz_file_trans, zmt_folder_out, n_points, output_xyz)
 
 
 if __name__ == '__main__':
@@ -573,6 +758,7 @@ if __name__ == '__main__':
     parser.add_argument('--xyz-file-trans', help='XYZ file with transformed atom coordinates')
     parser.add_argument('--zmt-folder-out', help='Output folder for z-matrices')
     parser.add_argument('--n-points', type=int, default=0, help='Number of interpolation points')
+    parser.add_argument('--output-xyz', action=argparse.BooleanOptionalAction, default=True, help='Convert to XYZ')
 
     args = parser.parse_args()
     main(**vars(args))
