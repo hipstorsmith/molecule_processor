@@ -10,6 +10,8 @@ CASSCF and XMCQDPT methods. It includes the following modules:
   - VEC Changer
   - QDPT result processing
 
+Partially based on https://github.com/ilyxych96/ScanEP
+
 ### Molecular delimiter
 > If you have molecular modeling cell or crystal fragment (typically 2×2×2 to 3×3×3 unit cells) and you need monomers 
 > and dimers you can use this module
